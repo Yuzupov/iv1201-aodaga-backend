@@ -2,6 +2,7 @@ package com.grupp1.api;
 
 import com.grupp1.api.Tokenizer.TokenDTO;
 import java.time.Instant;
+import org.apache.commons.lang3.SerializationUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 

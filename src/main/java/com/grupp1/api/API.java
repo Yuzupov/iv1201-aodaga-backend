@@ -21,7 +21,14 @@ public class API {
       Spark.port(port);
     }
     setUpEndpoints();
-    enableCORS("http://localhost:5173", "*", "content-type");
+    if (System.getProperty("PORT") != null) {
+      enableCORS("https://recruitment-application-fronte-593587373fd5.herokuapp.com", "*",
+          "content-type");
+    } else {
+      enableCORS("https://recruitment-application-fronte-593587373fd5.herokuapp.com", "*",
+          "content-type");
+      //enableCORS("http://localhost:5173/", "*", "content-type");
+    }
   }
 
   private void setUpEndpoints() {

@@ -23,8 +23,6 @@ SET default_table_access_method = heap;
 --
 -- Name: availability; Type: TABLE; Schema: public; Owner: postgres
 --
-CREATE USER aodaga;
-
 DROP TABLE public.availability;
 DROP TABLE public.competence;
 DROP TABLE public.competence_profile;

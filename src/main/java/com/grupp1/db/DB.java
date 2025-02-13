@@ -1,5 +1,7 @@
 package com.grupp1.db;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.*;
 
 public class DB {
@@ -7,12 +9,24 @@ public class DB {
   static String user = "aodaga";
   static String password = "";
   static String db = "aodaga";
-  static String host = "localhost";
+  static String host = "jdbc:postgresql://localhost";
   static String port = "5432";
 
   private static Connection getConn() throws SQLException {
-    String url = "jdbc:postgresql://" + host + ":" + port + "/" + db;
-    return DriverManager.getConnection(url, user, password);
+    try {
+      Class.forName("org.postgresql.Driver");
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
+    if (System.getenv("DATABASE_URL") != null) {
+
+      return DriverManager.getConnection(System.getenv("JDBC_DATABASE_URL"));
+
+    } else {
+      String url = "" + host + ":" + port + "/" + db;
+      return DriverManager.getConnection(url, user, password);
+    }
   }
 
   public static void createUser(String name, String surname, String pnr, String email,
