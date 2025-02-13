@@ -78,6 +78,10 @@ class Crypt {
     }
   }
 
+  public static String buryRsa(byte[] message, String key){
+    return null;
+  }
+
 
   private static String decrypt(String cipherText,
       String ivstring, String keyString) throws BadApiInputException {
