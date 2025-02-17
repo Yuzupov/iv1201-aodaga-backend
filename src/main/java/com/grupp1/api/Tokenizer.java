@@ -1,25 +1,51 @@
 package com.grupp1.api;
 
-import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import org.apache.commons.lang3.SerializationUtils;
+import org.json.JSONObject;
 
 
-public class Tokenizer {
-  public class TokenDTO implements Serializable {
+class Tokenizer {
+
+  static class TokenData {
+
+    byte[] token;
     String username;
     Long expirationDate;
-    TokenDTO(String username, Long expirationDate){
-      this.username = username;
-      this.expirationDate = expirationDate;
+
+    TokenData(byte[] token, String uName, long time) {
+      this.token = token;
+      this.username = uName;
+      this.expirationDate = time;
     }
   }
-  byte[] createToken(String key, String username){
-    TokenDTO tokenDTO = new TokenDTO(username, Instant.now().getEpochSecond()+86500);
-    byte[] token = SerializationUtils.serialize(tokenDTO);
 
-    TokenDTO deser = SerializationUtils.deserialize(token);
-    System.out.println(deser.username);
-    return token;
+  /**
+   * Takes in a username and output an object, TokenData. TokenData contains a String username, long
+   * expiration date and byte[] token which is a byte representation of a stringified JSON object
+   * containing the username and expiration date.
+   *
+   * @param username
+   * @return TokenData object
+   */
+  TokenData createToken(String username) {
+    long expirationTime = Instant.now().getEpochSecond() + 86500;
+    JSONObject json = new JSONObject();
+    json.put("username", username);
+    json.put("expiration", expirationTime);
+    return new TokenData(json.toString().getBytes(StandardCharsets.UTF_8), username,
+        expirationTime);
+  }
+
+  /**
+   * Extracts the username from the byte[] token and returns a string
+   *
+   * @param token
+   * @return username
+   */
+  String extractUsername(byte[] token) {
+    String jsonString = new String(token, StandardCharsets.UTF_8);
+    JSONObject json = new JSONObject(jsonString);
+    return json.getString("username");
   }
 }

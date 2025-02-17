@@ -1,8 +1,7 @@
 package com.grupp1.api;
 
-import com.grupp1.api.Tokenizer.TokenDTO;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import org.apache.commons.lang3.SerializationUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -42,7 +41,7 @@ class Validation {
         }
       } catch (JSONException e) {
         e.printStackTrace();
-        throw new ValidationException("missing '" + field + "' parameter");
+        throw new ValidationException("missing '" + field + "' field");
       }
     }
   }
@@ -58,16 +57,42 @@ class Validation {
         String fieldVal = json.getString(field);
       } catch (JSONException e) {
         e.printStackTrace();
-        throw new ValidationException("missing '" + field + "' parameter");
+        throw new ValidationException("missing '" + field + "' field");
       }
     }
 
   }
-  static boolean validateToken(byte[] token, String username){
-    TokenDTO deserializedToken = SerializationUtils.deserialize(token);
-    boolean validTime = deserializedToken.expirationDate > Instant.now().getEpochSecond();
-    boolean validName = deserializedToken.username.equals(username);
-    return validName && validTime;
-  }
 
+  /**
+   * Takes in byte[] Token Checks that token can parse into a JSON object Checks that said object
+   * contains the correct fields Check that token is not expired throws exceptions in case something
+   * is wrong.
+   *
+   * @param token
+   * @throws ValidationException
+   */
+  static void validateToken(byte[] token) throws ValidationException {
+    JSONObject json = null;
+    String field = "";
+    try {
+      String jsonString = new String(token, StandardCharsets.UTF_8);
+      json = new JSONObject(jsonString);
+    } catch (JSONException e) {
+      e.printStackTrace();
+      throw new ValidationException("Token not valid" + e);
+    }
+    try {
+      field = "username";
+      json.getString(field);
+      field = "expiration";
+      long expirationTime = json.getLong(field);
+
+      if (!(expirationTime > Instant.now().getEpochSecond())) {
+        throw new ValidationException("Token is Expired");
+      }
+    } catch (JSONException e) {
+      e.printStackTrace();
+      throw new ValidationException("missing " + field + "field");
+    }
+  }
 }

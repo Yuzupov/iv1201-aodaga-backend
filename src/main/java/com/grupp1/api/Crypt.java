@@ -3,9 +3,13 @@ package com.grupp1.api;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -78,8 +82,51 @@ class Crypt {
     }
   }
 
-  public static String buryRsa(byte[] message, String key){
-    return null;
+  /**
+   * Takes a byte[] and encrypts with a public key.
+   *
+   * @param message
+   * @param privateKeyPem
+   * @return Base64 encrypted String
+   */
+  public static String EncryptRsaPubKey(byte[] message, String privateKeyPem) {
+    try {
+      String privateKeyPEM = privateKeyPem
+          .replace("-----BEGIN PRIVATE KEY-----", "")
+          .replaceAll(System.lineSeparator(), "")
+          .replace("-----END PRIVATE KEY-----", "");
+      byte[] keyBytes = Base64.getDecoder().decode(privateKeyPEM);
+
+      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+      PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+      PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+
+      RSAPrivateCrtKey rsaPrivateKey = (RSAPrivateCrtKey) privateKey;
+      RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(
+          rsaPrivateKey.getModulus(),
+          rsaPrivateKey.getPublicExponent()
+      );
+      PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+
+      Cipher cipher = Cipher.getInstance("RSA");
+      cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+
+      byte[] encrypted = cipher.doFinal(Base64.getEncoder().encode(message));
+      return Base64.getEncoder().encodeToString(encrypted);
+
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    } catch (InvalidKeyException e) {
+      throw new RuntimeException(e);
+    } catch (InvalidKeySpecException e) {
+      throw new RuntimeException(e);
+    } catch (NoSuchPaddingException e) {
+      throw new RuntimeException(e);
+    } catch (IllegalBlockSizeException e) {
+      throw new RuntimeException(e);
+    } catch (BadPaddingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 
@@ -116,5 +163,4 @@ class Crypt {
     }
     return data;
   }
-
 }
