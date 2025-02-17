@@ -58,11 +58,14 @@ public class PasswordHash {
    * @param storedSaltedHash
    * @return true if the password corresonds to the hash, otherwise false.
    */
-  public static boolean validatePassword(String password, String storedSaltedHash) {
+  public static void testPassword(String password, String storedSaltedHash)
+      throws PasswordException {
     String[] splitSaltedHash = storedSaltedHash.split("\\$");
     byte[] salt = Base64.getDecoder().decode(splitSaltedHash[1]);
     String storedHash = splitSaltedHash[2];
     String passwordHash = hashPassword(password, salt);
-    return passwordHash.equals(storedSaltedHash);
+    if (!passwordHash.equals(storedSaltedHash)) {
+      throw new PasswordException("Wrong Password");
+    }
   }
 }

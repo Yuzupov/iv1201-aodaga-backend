@@ -9,11 +9,11 @@ class Tokenizer {
 
   static class TokenData {
 
-    byte[] token;
+    String token;
     String username;
     Long expirationDate;
 
-    TokenData(byte[] token, String uName, long time) {
+    TokenData(String token, String uName, long time) {
       this.token = token;
       this.username = uName;
       this.expirationDate = time;
@@ -33,8 +33,8 @@ class Tokenizer {
     JSONObject json = new JSONObject();
     json.put("username", username);
     json.put("expiration", expirationTime);
-    return new TokenData(json.toString().getBytes(StandardCharsets.UTF_8), username,
-        expirationTime);
+    String token = Crypt.encryptRsaPubKey(json.toString().getBytes(StandardCharsets.UTF_8));
+    return new TokenData(token, username, expirationTime);
   }
 
   /**

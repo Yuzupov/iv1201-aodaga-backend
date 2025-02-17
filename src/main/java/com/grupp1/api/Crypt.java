@@ -22,19 +22,8 @@ import org.json.JSONObject;
 
 class Crypt {
 
-  static JSONObject decryptJson(JSONObject json) throws BadApiInputException, ValidationException {
-    String encryptedKey = json.getString("key");
-    String crypt = json.getString("cipher");
-    String iv = json.getString("iv");
-    String key = decryptRSA(encryptedKey);
-    String decryptedJsonString = decrypt(crypt, iv, key);
-    return Json.parseJson(decryptedJsonString);
-  }
-
-
-  public static String decryptRSA(String cipherText) {
-    try {
-      String key = "-----BEGIN PRIVATE KEY-----\n"
+  private static final String rsaPrivKey =
+      "-----BEGIN PRIVATE KEY-----\n"
           + "MIICeQIBADANBgkqhkiG9w0BAQEFAASCAmMwggJfAgEAAoGBALVtRzmA5aSxe1QR\n"
           + "Ico3IVpolewxmYehk0uFfET/YD4YZZz/XoQIO+twbJqOC6RzSIHbahcWKwqFhl3z\n"
           + "owp6+vgX0QeRyA4yVef0LhzsZoNsXTJ1p6mVMR432YboA3Ln5vw6TgdlpUl2uRhH\n"
@@ -51,7 +40,19 @@ class Crypt {
           + "e2+cS/dHkYPwTgZbKw==\n"
           + "-----END PRIVATE KEY-----";
 
-      String privateKeyPEM = key
+  static JSONObject decryptJson(JSONObject json) throws BadCryptException, ValidationException {
+    String encryptedKey = json.getString("key");
+    String crypt = json.getString("cipher");
+    String iv = json.getString("iv");
+    String key = decryptRSA(encryptedKey);
+    String decryptedJsonString = decrypt(crypt, iv, key);
+    return Json.parseJson(decryptedJsonString);
+  }
+
+
+  public static String decryptRSA(String cipherText) {
+    try {
+      String privateKeyPEM = rsaPrivKey
           .replace("-----BEGIN PRIVATE KEY-----", "")
           .replaceAll(System.lineSeparator(), "")
           .replace("-----END PRIVATE KEY-----", "");
@@ -86,12 +87,11 @@ class Crypt {
    * Takes a byte[] and encrypts with a public key.
    *
    * @param message
-   * @param privateKeyPem
    * @return Base64 encrypted String
    */
-  public static String EncryptRsaPubKey(byte[] message, String privateKeyPem) {
+  public static String encryptRsaPubKey(byte[] message) {
     try {
-      String privateKeyPEM = privateKeyPem
+      String privateKeyPEM = rsaPrivKey
           .replace("-----BEGIN PRIVATE KEY-----", "")
           .replaceAll(System.lineSeparator(), "")
           .replace("-----END PRIVATE KEY-----", "");
@@ -131,7 +131,7 @@ class Crypt {
 
 
   private static String decrypt(String cipherText,
-      String ivstring, String keyString) throws BadApiInputException {
+      String ivstring, String keyString) throws BadCryptException {
 
     //byte[] lol = hexStringToByteArray("000102030405060708090a0b0c0d0e0f");
     byte[] key = hexStringToByteArray(keyString);
@@ -150,7 +150,7 @@ class Crypt {
       return new String(plainText);
     } catch (Exception e) {
       e.printStackTrace();
-      throw new BadApiInputException("Bad Crypt");
+      throw new BadCryptException("Bad Crypt");
     }
   }
 
