@@ -27,7 +27,7 @@ public class API {
     } else {
       //enableCORS("https://recruitment-application-fronte-593587373fd5.herokuapp.com", "*",
       //    "content-type");
-      enableCORS("http://localhost:5173/", "*", "content-type");
+      enableCORS("http://localhost:5173", "*", "content-type");
     }
   }
 
