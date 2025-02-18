@@ -1,10 +1,12 @@
 package com.grupp1.api;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
@@ -45,10 +47,17 @@ class Crypt {
     String crypt = json.getString("cipher");
     String iv = json.getString("iv");
     String key = decryptRSA(encryptedKey);
-    String decryptedJsonString = decrypt(crypt, iv, key);
-    return Json.parseJson(decryptedJsonString);
+    String decryptedJsonString = decryptAES(crypt, iv, key);
+    JSONObject decryptedJson = Json.parseJson(decryptedJsonString);
+    decryptedJson.put("symmetricKey", key);
+    return decryptedJson;
   }
 
+  static JSONObject encryptJson(JSONObject json, String symmetricKey) throws BadCryptException {
+    String cipher = encryptAES(json.toString(), symmetricKey);
+
+
+  }
 
   public static String decryptRSA(String cipherText) {
     try {
@@ -129,8 +138,32 @@ class Crypt {
     }
   }
 
+  private static String encryptAES(String message, String keyString) throws BadCryptException {
+    byte[] key = hexStringToByteArray(keyString);
+    SecretKey sKey = new SecretKeySpec(key, "AES");
+    byte[] ivBytes = new byte[16];
+    new SecureRandom().nextBytes(ivBytes);
+    IvParameterSpec iv = new IvParameterSpec(ivBytes);
 
-  private static String decrypt(String cipherText,
+    try {
+      Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+      cipher.init(Cipher.ENCRYPT_MODE, sKey, iv);
+      byte[] cipherBytes = cipher.doFinal(message.getBytes(StandardCharsets.UTF_8));
+      String cipherText = Base64.getEncoder().encodeToString(cipherBytes);
+      return new String(cipherText);
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new BadCryptException("Bad Crypt");
+    }
+  }
+
+  //private record AESCrypt() {
+//
+  //}
+
+
+  private static String decryptAES(String cipherText,
       String ivstring, String keyString) throws BadCryptException {
 
     //byte[] lol = hexStringToByteArray("000102030405060708090a0b0c0d0e0f");
