@@ -3,6 +3,7 @@ package com.grupp1.api;
 import com.grupp1.api.Tokenizer.TokenData;
 import com.grupp1.controller.Controller;
 
+import com.grupp1.controller.IllegalRoleException;
 import com.grupp1.controller.PasswordException;
 import com.grupp1.controller.UserDTO;
 import com.grupp1.db.NoSuchUserException;
@@ -13,7 +14,6 @@ import spark.Response;
 import spark.Spark;
 
 import static spark.Spark.before;
-import static spark.Spark.ipAddress;
 
 public class API {
 
@@ -39,6 +39,7 @@ public class API {
     Spark.post("/login", this::login);
     Spark.options("/login", this::test);
     Spark.post("/register", this::register);
+    Spark.post("/listall", this::listAll);
     Spark.options("/register", this::test);
   }
 
@@ -125,6 +126,28 @@ public class API {
     } catch (Throwable e) {
       e.printStackTrace();
       throw new RuntimeException(e.getMessage());
+    }
+  }
+
+  String listAll(Request req, Response res) {
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      Validation.validateEncrypted(cryptJson);
+      JSONObject json = Crypt.decryptJson(cryptJson);
+
+      Validation.validateListAll(json);
+      String token = json.getString("token");
+      TokenData tokenData = Tokenizer.extreactToken(token);
+      Controller.listAll(tokenData.username());
+      return "if you gaze long into an abyss, the abyss will also gaze into you.";
+      // Must fix catches
+    } catch (ValidationException e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    } catch (BadCryptException e) {
+      throw new RuntimeException(e);
+    } catch (IllegalRoleException e) {
+      throw new RuntimeException(e);
     }
   }
 }

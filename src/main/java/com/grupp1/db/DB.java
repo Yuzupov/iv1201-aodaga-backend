@@ -1,5 +1,6 @@
 package com.grupp1.db;
 
+import com.grupp1.controller.ApplicantsDTO;
 import com.grupp1.controller.UserDTO;
 import java.sql.*;
 
@@ -119,5 +120,9 @@ public class DB {
     }
 
 
+  }
+
+  public static ApplicantsDTO listAll() {
+    return null;
   }
 }

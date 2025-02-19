@@ -9,6 +9,7 @@ import com.grupp1.api.ServerException;
 import com.grupp1.db.NoSuchUserException;
 import com.grupp1.db.UserExistsException;
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class Controller {
 
@@ -49,4 +50,25 @@ public class Controller {
 
   }
 
+  /**
+   * Will request User data and check if user is in fact allowed to make the intended request.
+   *
+   * @param username
+   * @return ApplicantsDTO, a read only record of all applicants.
+   * @throws IllegalRoleException
+   */
+  public static ApplicantsDTO listAll(String username) throws IllegalRoleException {
+    try {
+      UserDTO user = DB.getUserByUsernameOrEmail(username, "");
+      if (!Objects.equals(user.role(), "recruiter")) {
+        throw new IllegalRoleException(
+            "Invalid Role '" + user.role() + " for the requested Action");
+      }
+      ApplicantsDTO applicants = DB.listAll();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    } catch (NoSuchUserException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

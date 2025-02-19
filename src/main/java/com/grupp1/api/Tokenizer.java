@@ -2,22 +2,14 @@ package com.grupp1.api;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import org.json.JSONObject;
 
 
 class Tokenizer {
+  
+  record TokenData(String token, String username, Long expirationDate) {
 
-  static class TokenData {
-
-    String token;
-    String username;
-    Long expirationDate;
-
-    TokenData(String token, String uName, long time) {
-      this.token = token;
-      this.username = uName;
-      this.expirationDate = time;
-    }
   }
 
   /**
@@ -28,7 +20,7 @@ class Tokenizer {
    * @param username
    * @return TokenData object
    */
-  TokenData createToken(String username) {
+  static TokenData createToken(String username) {
     long expirationTime = Instant.now().getEpochSecond() + 86500;
     JSONObject json = new JSONObject();
     json.put("username", username);
@@ -38,14 +30,18 @@ class Tokenizer {
   }
 
   /**
-   * Extracts the username from the byte[] token and returns a string
+   * Takes in a token and recreates the TokenData object from the information it contains.
    *
    * @param token
-   * @return username
+   * @return TokenData based on a valid token
+   * @throws ValidationException
    */
-  String extractUsername(byte[] token) {
-    String jsonString = new String(token, StandardCharsets.UTF_8);
+  static TokenData extreactToken(String token) throws ValidationException {
+    String decryptedToken = Crypt.decryptRSA(token);
+    Validation.validateToken(decryptedToken);
+    byte[] tokenBytes = Base64.getDecoder().decode(token);
+    String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
     JSONObject json = new JSONObject(jsonString);
-    return json.getString("username");
+    return new TokenData(token, json.getString("username"), json.getLong("expiration"));
   }
 }

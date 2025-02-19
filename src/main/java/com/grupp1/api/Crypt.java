@@ -53,11 +53,6 @@ class Crypt {
     return decryptedJson;
   }
 
-  static JSONObject encryptJson(JSONObject json, String symmetricKey) throws BadCryptException {
-    String cipher = encryptAES(json.toString(), symmetricKey);
-
-
-  }
 
   public static String decryptRSA(String cipherText) {
     try {
