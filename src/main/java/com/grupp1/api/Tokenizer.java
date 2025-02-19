@@ -7,17 +7,8 @@ import org.json.JSONObject;
 
 class Tokenizer {
 
-  static class TokenData {
+  static record TokenData(String token, String username, Long expirationDate) {
 
-    String token;
-    String username;
-    Long expirationDate;
-
-    TokenData(String token, String uName, long time) {
-      this.token = token;
-      this.username = uName;
-      this.expirationDate = time;
-    }
   }
 
   /**
@@ -28,7 +19,7 @@ class Tokenizer {
    * @param username
    * @return TokenData object
    */
-  TokenData createToken(String username) {
+  static TokenData createToken(String username) {
     long expirationTime = Instant.now().getEpochSecond() + 86500;
     JSONObject json = new JSONObject();
     json.put("username", username);
@@ -43,7 +34,7 @@ class Tokenizer {
    * @param token
    * @return username
    */
-  String extractUsername(byte[] token) {
+  static String extractUsername(byte[] token) {
     String jsonString = new String(token, StandardCharsets.UTF_8);
     JSONObject json = new JSONObject(jsonString);
     return json.getString("username");

@@ -13,7 +13,6 @@ import spark.Response;
 import spark.Spark;
 
 import static spark.Spark.before;
-import static spark.Spark.ipAddress;
 
 public class API {
 
@@ -59,9 +58,17 @@ public class API {
 
   String login(Request req, Response res) {
     try {
+      //testcode
+      /*
+      JSONObject json = Json.parseJson(req.body());
+      json.put("symmetricKey",
+          Crypt.decryptRSA(
+              "sG6xj4VkLWVOHBwJDSVyi5AWqT3ix6w2/2TQj8pU95Rc/RBqgaPVtp2WiRMMEL/FpurXpv/Y6g3jyT5mdx6KLcxI0jmqQsFkic96s9y6kaKxSoTCGrTrOwMixLjm9dkHmYEzdkGjrPh38a3XymeFOVoyLK07YuvMU3uJ8CdgRzw="));
+      */
       JSONObject cryptJson = Json.parseJson(req.body());
       Validation.validateEncrypted(cryptJson);
       JSONObject json = Crypt.decryptJson(cryptJson);
+
       Validation.validateLogin(json);
       String username = null;
       String email = null;
@@ -73,17 +80,18 @@ public class API {
       }
 
       UserDTO user = Controller.login(username, email, json.getString("userPassword"));
-      TokenData tokenObj = new Tokenizer().createToken(user.username());
+      TokenData tokenObj = Tokenizer.createToken(user.username());
 
       JSONObject responseJson = new JSONObject();
-      responseJson.put("token", tokenObj.token);
+      responseJson.put("token", tokenObj.token());
       responseJson.put("username", user.username());
       responseJson.put("userEmail", user.email());
-      responseJson.put("expirationDate", tokenObj.expirationDate);
+      responseJson.put("expirationDate", tokenObj.expirationDate());
 
+      System.out.println("test");
       System.out.println(responseJson.toString());
-      return responseJson.toString();
 
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey")).toString();
 
     } catch (ValidationException | NoSuchUserException e) {
       res.status(400);

@@ -54,9 +54,13 @@ class Crypt {
   }
 
   static JSONObject encryptJson(JSONObject json, String symmetricKey) throws BadCryptException {
-    String cipher = encryptAES(json.toString(), symmetricKey);
 
-
+    System.out.println("testt");
+    AESCrypt crypt = encryptAES(json.toString(), symmetricKey);
+    JSONObject cryptJson = new JSONObject();
+    cryptJson.put("cipher", crypt.cipher());
+    cryptJson.put("iv", crypt.iv());
+    return cryptJson;
   }
 
   public static String decryptRSA(String cipherText) {
@@ -138,8 +142,8 @@ class Crypt {
     }
   }
 
-  private static String encryptAES(String message, String keyString) throws BadCryptException {
-    byte[] key = hexStringToByteArray(keyString);
+  private static AESCrypt encryptAES(String message, String keyString) throws BadCryptException {
+    byte[] key = Base64.getDecoder().decode(keyString);
     SecretKey sKey = new SecretKeySpec(key, "AES");
     byte[] ivBytes = new byte[16];
     new SecureRandom().nextBytes(ivBytes);
@@ -150,7 +154,8 @@ class Crypt {
       cipher.init(Cipher.ENCRYPT_MODE, sKey, iv);
       byte[] cipherBytes = cipher.doFinal(message.getBytes(StandardCharsets.UTF_8));
       String cipherText = Base64.getEncoder().encodeToString(cipherBytes);
-      return new String(cipherText);
+      String ivText = Base64.getEncoder().encodeToString(ivBytes);
+      return new AESCrypt(cipherText, ivText);
 
     } catch (Exception e) {
       e.printStackTrace();
@@ -158,21 +163,26 @@ class Crypt {
     }
   }
 
-  //private record AESCrypt() {
-//
-  //}
+  /**
+   * data encrypted using the AES algorithm encoded in Base64;
+   *
+   * @param cipher Base64 encoded cipher
+   * @param iv     Base64 encoded iv
+   */
+  private record AESCrypt(String cipher, String iv) {
+
+  }
 
 
   private static String decryptAES(String cipherText,
       String ivstring, String keyString) throws BadCryptException {
 
-    //byte[] lol = hexStringToByteArray("000102030405060708090a0b0c0d0e0f");
-    byte[] key = hexStringToByteArray(keyString);
+    System.out.println("keystring " + keyString);
+    byte[] key = Base64.getDecoder().decode(keyString);
     SecretKey sKey = new SecretKeySpec(key, "AES");
 
-    byte[] ivbytes = hexStringToByteArray(ivstring);
+    byte[] ivbytes = Base64.getDecoder().decode(ivstring);
     IvParameterSpec iv = new IvParameterSpec(ivbytes);
-    //cipherText = "lol";
 
     try {
       Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -185,15 +195,5 @@ class Crypt {
       e.printStackTrace();
       throw new BadCryptException("Bad Crypt");
     }
-  }
-
-  private static byte[] hexStringToByteArray(String s) {
-    int len = s.length();
-    byte[] data = new byte[len / 2];
-    for (int i = 0; i < len; i += 2) {
-      data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-          + Character.digit(s.charAt(i + 1), 16));
-    }
-    return data;
   }
 }
