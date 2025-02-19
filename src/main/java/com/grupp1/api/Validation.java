@@ -2,10 +2,15 @@ package com.grupp1.api;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class Validation {
+
+  private static final Logger log = API.log;
 
   private static void validateUsername(String username, String fieldName)
       throws ValidationException {
@@ -99,6 +104,21 @@ class Validation {
     }
   }
 
+  static void validateAESKey(String key) throws ValidationException {
+    try {
+      byte[] keyBytes = Base64.getDecoder().decode(key);
+
+      if (keyBytes.length != 32) {
+        log.info("Validation not passed: key is " + keyBytes.length + " bytes long, must be 32.");
+        throw new ValidationException("invalid key");
+      }
+    } catch (IllegalArgumentException e) {
+      log.info("Validation not passed: decoded key invalid Base64: " + e.getMessage());
+      throw new ValidationException("'" + key + "' not valid");
+    }
+
+  }
+
   static void validateEncrypted(JSONObject json) throws ValidationException {
 
     String[] expectedFields = {
@@ -108,9 +128,28 @@ class Validation {
     for (String field : expectedFields) {
       try {
         String fieldVal = json.getString(field);
+        byte[] fieldBytes = Base64.getDecoder().decode(fieldVal);
+        if (field == "iv") {
+          if (fieldBytes.length != 16) {
+            log.info(
+                "Validation not passed: iv is " + fieldBytes.length + " bytes long, must be 16.");
+            throw new ValidationException("bad iv length");
+          }
+        }
+        if (field == "key") {
+          if (fieldBytes.length != 128) {
+            log.info(
+                "Validation not passed: encrypted key is " + fieldBytes.length
+                    + " bytes long, must be 128.");
+            throw new ValidationException("bad key crypt length");
+          }
+        }
       } catch (JSONException e) {
-        e.printStackTrace();
-        throw new ValidationException("missing '" + field + "' field");
+        log.info("Validation not passed: " + e.getMessage());
+        throw new ValidationException("bad or missing '" + field + "' field");
+      } catch (IllegalArgumentException e) {
+        log.info("Validation not passed: '" + field + "' invalid Base64: " + e.getMessage());
+        throw new ValidationException("'" + field + "' not valid Base64");
       }
     }
 

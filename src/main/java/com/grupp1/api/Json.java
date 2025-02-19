@@ -10,6 +10,7 @@ class Json {
       JSONObject json = new JSONObject(jsonString);
       return json;
     } catch (JSONException e) {
+      API.log.info("Validation not passed, invalid json: " + e.getMessage());
       throw new ValidationException("Not valid JSON");
     }
   }

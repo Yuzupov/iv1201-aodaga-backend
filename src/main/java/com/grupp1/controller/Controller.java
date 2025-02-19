@@ -3,14 +3,20 @@ package com.grupp1.controller;
 import static com.grupp1.controller.PasswordHash.hashPassword;
 import static com.grupp1.controller.PasswordHash.testPassword;
 
+import com.grupp1.api.API;
 import com.grupp1.api.BadApiInputException;
 import com.grupp1.db.DB;
 import com.grupp1.api.ServerException;
+import com.grupp1.db.DBException;
 import com.grupp1.db.NoSuchUserException;
 import com.grupp1.db.UserExistsException;
 import java.sql.SQLException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Controller {
+
+  static final Logger log = LoggerFactory.getLogger(Controller.class);
 
   public static UserDTO login(String username, String email, String password)
       throws PasswordException, ServerException, NoSuchUserException {
@@ -22,8 +28,8 @@ public class Controller {
       testPassword(password, user.password());
       return user;
 
-    } catch (SQLException e) {
-      throw new ServerException(e.toString());
+    } catch (DBException e) {
+      throw new ServerException("database error");
     }
   }
 
@@ -39,10 +45,10 @@ public class Controller {
 
     try {
       DB.createUser(firstName, lastName, personalNumber, email, passwordHash, userName);
-    } catch (SQLException e) {
-      throw new ServerException(e.toString());
     } catch (UserExistsException e) {
       throw new BadApiInputException(e.getMessage());
+    } catch (DBException e) {
+      throw new ServerException("Database Error");
     }
 
     return true;

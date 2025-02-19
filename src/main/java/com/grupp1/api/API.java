@@ -6,7 +6,10 @@ import com.grupp1.controller.Controller;
 import com.grupp1.controller.PasswordException;
 import com.grupp1.controller.UserDTO;
 import com.grupp1.db.NoSuchUserException;
+import java.util.Arrays;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.Filter;
 import spark.Request;
 import spark.Response;
@@ -15,6 +18,8 @@ import spark.Spark;
 import static spark.Spark.before;
 
 public class API {
+
+  static final Logger log = LoggerFactory.getLogger(API.class);
 
   public API() {
     this(4567);
@@ -57,6 +62,7 @@ public class API {
   }
 
   String login(Request req, Response res) {
+    logRequest(req);
     try {
       //testcode
       /*
@@ -66,7 +72,6 @@ public class API {
               "sG6xj4VkLWVOHBwJDSVyi5AWqT3ix6w2/2TQj8pU95Rc/RBqgaPVtp2WiRMMEL/FpurXpv/Y6g3jyT5mdx6KLcxI0jmqQsFkic96s9y6kaKxSoTCGrTrOwMixLjm9dkHmYEzdkGjrPh38a3XymeFOVoyLK07YuvMU3uJ8CdgRzw="));
       */
       JSONObject cryptJson = Json.parseJson(req.body());
-      Validation.validateEncrypted(cryptJson);
       JSONObject json = Crypt.decryptJson(cryptJson);
 
       Validation.validateLogin(json);
@@ -109,9 +114,9 @@ public class API {
   }
 
   String register(Request req, Response res) {
+    logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
-      Validation.validateEncrypted(cryptJson);
       JSONObject json = Crypt.decryptJson(cryptJson);
       Validation.validateRegister(json);
 
@@ -130,9 +135,17 @@ public class API {
     } catch (ServerException e) {
       res.status(500);
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
-    } catch (Throwable e) {
-      e.printStackTrace();
-      throw new RuntimeException(e.getMessage());
     }
+  }
+
+  private void logRequest(Request req) {
+    log.info("API call: " + req.pathInfo());
+    StringBuilder s = new StringBuilder();
+    for (String h : req.headers()) {
+      s.append('[').append(h).append(":");
+      s.append(req.headers(h));
+      s.append("],");
+    }
+    log.debug("Headers: " + s.toString());
   }
 }

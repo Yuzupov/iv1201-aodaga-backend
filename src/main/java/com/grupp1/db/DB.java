@@ -1,9 +1,14 @@
 package com.grupp1.db;
 
+import com.grupp1.api.API;
 import com.grupp1.controller.UserDTO;
 import java.sql.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DB {
+
+  static final Logger log = LoggerFactory.getLogger(DB.class);
 
   static String user = "aodaga";
   static String password = "";
@@ -11,25 +16,29 @@ public class DB {
   static String host = "jdbc:postgresql://localhost";
   static String port = "5432";
 
-  private static Connection getConn() throws SQLException {
+  private static Connection getConn() throws DBException {
     try {
       Class.forName("org.postgresql.Driver");
     } catch (ClassNotFoundException e) {
-      e.printStackTrace();
       throw new RuntimeException(e);
     }
-    if (System.getenv("DATABASE_URL") != null) {
+    try {
+      if (System.getenv("DATABASE_URL") != null) {
 
-      return DriverManager.getConnection(System.getenv("JDBC_DATABASE_URL"));
+        return DriverManager.getConnection(System.getenv("JDBC_DATABASE_URL"));
 
-    } else {
-      String url = "" + host + ":" + port + "/" + db;
-      return DriverManager.getConnection(url, user, password);
+      } else {
+        String url = "" + host + ":" + port + "/" + db;
+        return DriverManager.getConnection(url, user, password);
+      }
+    } catch (SQLException e) {
+      log.error("SQLException: " + e.getMessage());
+      throw new DBException(e);
     }
   }
 
   public static UserDTO getUserByUsernameOrEmail(String username, String email)
-      throws SQLException, NoSuchUserException {
+      throws NoSuchUserException, DBException {
     if (username == null) {
       username = "";
     }
@@ -65,9 +74,14 @@ public class DB {
       return user;
 
     } catch (SQLException e) {
-      conn.rollback();
-      e.printStackTrace();
-      throw e;
+      try {
+        conn.rollback();
+      } catch (SQLException ex) {
+        log.error("SQLException: " + ex.getMessage());
+        throw new DBException(ex);
+      }
+      log.error("SQLException: " + e.getMessage());
+      throw new DBException(e);
     }
 
   }
@@ -75,10 +89,9 @@ public class DB {
   public static void createUser(String name, String surname, String pnr, String email,
       String password,
       String username)
-      throws SQLException, UserExistsException {
+      throws UserExistsException, DBException {
 
     Connection conn = getConn();
-
     try {
       conn.setAutoCommit(false);
 
@@ -89,6 +102,8 @@ public class DB {
       ResultSet rrs = checkExists.executeQuery();
       if (rrs.next() && rrs.getInt(1) > 0) {
         conn.rollback();
+        log.info("no user created, username ('" + username + "') or email ('" + email
+            + "') already exists");
         throw new UserExistsException("username or email already exists");
       }
       Statement lol = conn.createStatement();
@@ -113,9 +128,15 @@ public class DB {
       conn.commit();
       conn.close();
     } catch (SQLException e) {
-      conn.rollback();
-      e.printStackTrace();
-      throw e;
+      try {
+        conn.rollback();
+        conn.close();
+      } catch (SQLException ex) {
+        log.error("SQLException" + ex.getMessage());
+        throw new DBException(ex);
+      }
+      log.error("SQLException" + e.getMessage());
+      throw new DBException(e);
     }
 
 

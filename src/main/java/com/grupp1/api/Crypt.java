@@ -1,6 +1,7 @@
 package com.grupp1.api;
 
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -21,8 +22,12 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class Crypt {
+
+  private static final Logger log = API.log;
 
   private static final String rsaPrivKey =
       "-----BEGIN PRIVATE KEY-----\n"
@@ -42,7 +47,18 @@ class Crypt {
           + "e2+cS/dHkYPwTgZbKw==\n"
           + "-----END PRIVATE KEY-----";
 
+  /**
+   * Decrypts an encrypted json object on the form {key:"..", cipher:"...", iv:"..."} where key is a
+   * symmetric key encrypted using the public key, cipher and iv are encrypted with that symmetric
+   * key. All encoded in base64.
+   *
+   * @param json the json object with key, cipher and iv
+   * @return The json object that was encrypted and contained in the carrier json object
+   * @throws BadCryptException
+   * @throws ValidationException
+   */
   static JSONObject decryptJson(JSONObject json) throws BadCryptException, ValidationException {
+    Validation.validateEncrypted(json);
     String encryptedKey = json.getString("key");
     String crypt = json.getString("cipher");
     String iv = json.getString("iv");
@@ -53,6 +69,16 @@ class Crypt {
     return decryptedJson;
   }
 
+  /**
+   * Encrypts a json object into another json object conaining the data needed for decryption once
+   * delivered.
+   *
+   * @param json         generic json object on any form
+   * @param symmetricKey AES key for encryption
+   * @return Json object {cipher: ****, iv: ****}, where cipher is the input json object stringified
+   * and encrypted
+   * @throws BadCryptException
+   */
   static JSONObject encryptJson(JSONObject json, String symmetricKey) throws BadCryptException {
 
     System.out.println("testt");
@@ -63,7 +89,15 @@ class Crypt {
     return cryptJson;
   }
 
-  public static String decryptRSA(String cipherText) {
+  /**
+   * Decrypts an RSA cipher encrypted with the public key, using the global private key.
+   *
+   * @param cipherText a string containing a Base64 encoded cipher byte array. The encoded data must
+   *                   be a valid string/.
+   * @return
+   * @throws BadCryptException
+   */
+  public static String decryptRSA(String cipherText) throws BadCryptException {
     try {
       String privateKeyPEM = rsaPrivKey
           .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -82,17 +116,14 @@ class Crypt {
       byte[] plainText = cipher.doFinal(Base64.getDecoder()
           .decode(cipherText));
 
-      System.out.println("decrypted: " + plainText.length + new String(plainText));
       return new String(plainText);
 
-    } catch (NoSuchAlgorithmException e) {
+    } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
       throw new RuntimeException(e);
-    } catch (NoSuchPaddingException e) {
-      throw new RuntimeException(e);
-    } catch (InvalidKeySpecException e) {
-      throw new RuntimeException(e);
-    } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-      throw new RuntimeException(e);
+    } catch (IllegalBlockSizeException | InvalidKeyException | BadPaddingException |
+             InvalidKeySpecException e) {
+      log.info("RSA decryption failed: " + e.getMessage());
+      throw new BadCryptException("Bad crypt: " + e.getMessage());
     }
   }
 
@@ -142,6 +173,14 @@ class Crypt {
     }
   }
 
+  /**
+   * AES encrypts provided message with the provided key and a randomized IV
+   *
+   * @param message   the message to be encrypted
+   * @param keyString the key, a base64 encoded byte array
+   * @return an AESCrypt object with the cipher and iv
+   * @throws BadCryptException
+   */
   private static AESCrypt encryptAES(String message, String keyString) throws BadCryptException {
     byte[] key = Base64.getDecoder().decode(keyString);
     SecretKey sKey = new SecretKeySpec(key, "AES");
@@ -157,9 +196,12 @@ class Crypt {
       String ivText = Base64.getEncoder().encodeToString(ivBytes);
       return new AESCrypt(cipherText, ivText);
 
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new BadCryptException("Bad Crypt");
+    } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+      throw new RuntimeException(e);
+    } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException |
+             BadPaddingException e) {
+      log.info("AES encryption failed: " + e.getMessage());
+      throw new BadCryptException("Bad crypt: " + e.getMessage());
     }
   }
 
@@ -177,7 +219,6 @@ class Crypt {
   private static String decryptAES(String cipherText,
       String ivstring, String keyString) throws BadCryptException {
 
-    System.out.println("keystring " + keyString);
     byte[] key = Base64.getDecoder().decode(keyString);
     SecretKey sKey = new SecretKeySpec(key, "AES");
 
@@ -189,11 +230,15 @@ class Crypt {
       cipher.init(Cipher.DECRYPT_MODE, sKey, iv);
       byte[] plainText = cipher.doFinal(Base64.getDecoder()
           .decode(cipherText));
-      System.out.println("decrypted: " + new String(plainText));
+      //System.out.println("decrypted: " + new String(plainText));
       return new String(plainText);
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new BadCryptException("Bad Crypt");
+
+    } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+      throw new RuntimeException(e);
+    } catch (BadPaddingException | InvalidKeyException | IllegalBlockSizeException |
+             InvalidAlgorithmParameterException e) {
+      log.info("AES decryption failed: " + e.getMessage());
+      throw new BadCryptException("Bad crypt: " + e.getMessage());
     }
   }
 }

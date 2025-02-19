@@ -65,6 +65,7 @@ public class PasswordHash {
     String storedHash = splitSaltedHash[2];
     String passwordHash = hashPassword(password, salt);
     if (!passwordHash.equals(storedSaltedHash)) {
+      Controller.log.info("Password does not match hash");
       throw new PasswordException("Wrong Password");
     }
   }

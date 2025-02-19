@@ -9,8 +9,11 @@
   <name>aodaga_backend</name>
   <url>http://maven.apache.org</url>
   <dependencies>
-    <!-- https://mvnrepository.com/artifact/com.sparkjava/spark-core -->
-
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>2.0.16</version>
+    </dependency>
     <dependency>
       <groupId>com.sparkjava</groupId>
       <artifactId>spark-core</artifactId>
@@ -79,6 +82,7 @@
       <artifactId>bcpkix-jdk18on</artifactId>
       <version>1.78</version>
     </dependency>
+
   </dependencies>
 
   <build>
