@@ -54,6 +54,19 @@ class Crypt {
               + "e2+cS/dHkYPwTgZbKw==\n"
               + "-----END PRIVATE KEY-----";
     }
+    //test key
+    String message = "test";
+    try {
+      String crypt = encryptRsaPubKey(message.getBytes(StandardCharsets.UTF_8));
+      String decryptedMessage = decryptRSA(crypt);
+      if (!decryptedMessage.equals(message)) {
+        throw new RuntimeException("Bad RSA key");
+      }
+    } catch (BadCryptException | RuntimeException e) {
+      log.error("RSA_PRIV_KEY failed test.");
+      throw new RuntimeException("Bad RSA key");
+    }
+
   }
 
   /**
@@ -167,17 +180,8 @@ class Crypt {
       byte[] encrypted = cipher.doFinal(Base64.getEncoder().encode(message));
       return Base64.getEncoder().encodeToString(encrypted);
 
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    } catch (InvalidKeyException e) {
-      throw new RuntimeException(e);
-    } catch (InvalidKeySpecException e) {
-      throw new RuntimeException(e);
-    } catch (NoSuchPaddingException e) {
-      throw new RuntimeException(e);
-    } catch (IllegalBlockSizeException e) {
-      throw new RuntimeException(e);
-    } catch (BadPaddingException e) {
+    } catch (NoSuchAlgorithmException | InvalidKeyException | InvalidKeySpecException |
+             NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
       throw new RuntimeException(e);
     }
   }
