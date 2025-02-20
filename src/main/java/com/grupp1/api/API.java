@@ -39,7 +39,7 @@ public class API {
     Spark.post("/login", this::login);
     Spark.options("/login", this::test);
     Spark.post("/register", this::register);
-    Spark.post("/listall", this::listAll);
+    Spark.post("/applicants", this::applicants);
     Spark.options("/register", this::test);
   }
 
@@ -129,16 +129,18 @@ public class API {
     }
   }
 
-  String listAll(Request req, Response res) {
+  String applicants(Request req, Response res) {
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
       Validation.validateEncrypted(cryptJson);
       JSONObject json = Crypt.decryptJson(cryptJson);
 
-      Validation.validateListAll(json);
+      Validation.validateApplicants(json);
       String token = json.getString("token");
       TokenData tokenData = Tokenizer.extreactToken(token);
-      Controller.listAll(tokenData.username());
+      Controller.applicants(tokenData.username());
+
+      res.status(200);
       return "if you gaze long into an abyss, the abyss will also gaze into you.";
       // Must fix catches
     } catch (ValidationException e) {

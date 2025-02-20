@@ -122,7 +122,7 @@ public class DB {
 
   }
 
-  public static ApplicantsDTO listAll() {
+  public static ApplicantsDTO applicants() {
     return null;
   }
 }

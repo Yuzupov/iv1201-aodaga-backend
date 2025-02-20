@@ -57,14 +57,15 @@ public class Controller {
    * @return ApplicantsDTO, a read only record of all applicants.
    * @throws IllegalRoleException
    */
-  public static ApplicantsDTO listAll(String username) throws IllegalRoleException {
+  public static ApplicantsDTO applicants(String username) throws IllegalRoleException {
     try {
       UserDTO user = DB.getUserByUsernameOrEmail(username, "");
       if (!Objects.equals(user.role(), "recruiter")) {
         throw new IllegalRoleException(
             "Invalid Role '" + user.role() + " for the requested Action");
       }
-      ApplicantsDTO applicants = DB.listAll();
+      return DB.applicants();
+
     } catch (SQLException e) {
       throw new RuntimeException(e);
     } catch (NoSuchUserException e) {

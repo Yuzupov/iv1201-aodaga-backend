@@ -106,7 +106,7 @@ class Validation {
    * @param json
    * @throws ValidationException
    */
-  static void validateListAll(JSONObject json) throws ValidationException {
+  static void validateApplicants(JSONObject json) throws ValidationException {
     try {
       json.getString("token");
     } catch (JSONException e) {
@@ -153,7 +153,7 @@ class Validation {
       e.printStackTrace();
       throw new ValidationException("token is wrong of wrong type");
     }
-    
+
     try {
       field = "username";
       json.getString(field);
