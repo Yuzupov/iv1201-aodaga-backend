@@ -29,23 +29,32 @@ class Crypt {
 
   private static final Logger log = LoggerFactory.getLogger(Crypt.class);
 
-  private static final String rsaPrivKey =
-      "-----BEGIN PRIVATE KEY-----\n"
-          + "MIICeQIBADANBgkqhkiG9w0BAQEFAASCAmMwggJfAgEAAoGBALVtRzmA5aSxe1QR\n"
-          + "Ico3IVpolewxmYehk0uFfET/YD4YZZz/XoQIO+twbJqOC6RzSIHbahcWKwqFhl3z\n"
-          + "owp6+vgX0QeRyA4yVef0LhzsZoNsXTJ1p6mVMR432YboA3Ln5vw6TgdlpUl2uRhH\n"
-          + "nKtAxlpfIh4ZN0vUeaJZUS3eRdwfAgMBAAECgYEAl99TiSqCkjxUPgpdW9aMoA7+\n"
-          + "uYrHt8ck80pZvbR9j12C6krHhwURi8Q/1Z1k15P9tV7ET3EqNJOT6GAEMsjB/rWv\n"
-          + "OmzRi2qBfcZF3qv9GWpDVONk8SFqoqLAspgxKJvl9dIj4gVH2yBjI2YtKUDFQ9m9\n"
-          + "fDWPahuwc6cpkGaEBEkCQQDamIChPvXrT/kw3HXRuRj9zBOxkVtA6cVxInH3SQXY\n"
-          + "zU0F6K4SceB34q24UccfoR7b/MTrReqAzSU4buhFd+IDAkEA1HicAzcLpmwXbTGq\n"
-          + "TlSGWCCsugI11Eqc6+/emMAPKHH6PSpS21BW6+2mpFz1CmUF6Pfvj7RWMUaND6Zr\n"
-          + "NQuwtQJBAKvK6GRQ59HsAwoMaKfO0T48kUme09mbHyl/iZNvFyJAjoTTTWJ/joqJ\n"
-          + "Yj+WPWi1Jlx7NYM1akuZbeQA/ZgC1GMCQQCxpG18WqeI61Li3uVvPEheomMH2hU7\n"
-          + "e26b7R+FQv7pZ/I69Yn1B8TE2Ru8zGOr3y8Dy1gmJDb0V/JUpWV5Il8JAkEAl2jy\n"
-          + "doxaf4lymJq7N6e9wOWJCeafa/rppq7vtoddz+RvfFPyiH36Vpi5k5PBJdAYBsJe\n"
-          + "e2+cS/dHkYPwTgZbKw==\n"
-          + "-----END PRIVATE KEY-----";
+  private static final String rsaPrivKey;
+
+  static {
+    String key = System.getenv("RSA_PRIV_KEY");
+    if (key.length() > 0) {
+      rsaPrivKey = key;
+    } else {
+      rsaPrivKey =
+          "-----BEGIN PRIVATE KEY-----\n"
+              + "MIICeQIBADANBgkqhkiG9w0BAQEFAASCAmMwggJfAgEAAoGBALVtRzmA5aSxe1QR\n"
+              + "Ico3IVpolewxmYehk0uFfET/YD4YZZz/XoQIO+twbJqOC6RzSIHbahcWKwqFhl3z\n"
+              + "owp6+vgX0QeRyA4yVef0LhzsZoNsXTJ1p6mVMR432YboA3Ln5vw6TgdlpUl2uRhH\n"
+              + "nKtAxlpfIh4ZN0vUeaJZUS3eRdwfAgMBAAECgYEAl99TiSqCkjxUPgpdW9aMoA7+\n"
+              + "uYrHt8ck80pZvbR9j12C6krHhwURi8Q/1Z1k15P9tV7ET3EqNJOT6GAEMsjB/rWv\n"
+              + "OmzRi2qBfcZF3qv9GWpDVONk8SFqoqLAspgxKJvl9dIj4gVH2yBjI2YtKUDFQ9m9\n"
+              + "fDWPahuwc6cpkGaEBEkCQQDamIChPvXrT/kw3HXRuRj9zBOxkVtA6cVxInH3SQXY\n"
+              + "zU0F6K4SceB34q24UccfoR7b/MTrReqAzSU4buhFd+IDAkEA1HicAzcLpmwXbTGq\n"
+              + "TlSGWCCsugI11Eqc6+/emMAPKHH6PSpS21BW6+2mpFz1CmUF6Pfvj7RWMUaND6Zr\n"
+              + "NQuwtQJBAKvK6GRQ59HsAwoMaKfO0T48kUme09mbHyl/iZNvFyJAjoTTTWJ/joqJ\n"
+              + "Yj+WPWi1Jlx7NYM1akuZbeQA/ZgC1GMCQQCxpG18WqeI61Li3uVvPEheomMH2hU7\n"
+              + "e26b7R+FQv7pZ/I69Yn1B8TE2Ru8zGOr3y8Dy1gmJDb0V/JUpWV5Il8JAkEAl2jy\n"
+              + "doxaf4lymJq7N6e9wOWJCeafa/rppq7vtoddz+RvfFPyiH36Vpi5k5PBJdAYBsJe\n"
+              + "e2+cS/dHkYPwTgZbKw==\n"
+              + "-----END PRIVATE KEY-----";
+    }
+  }
 
   /**
    * Decrypts an encrypted json object on the form {key:"..", cipher:"...", iv:"..."} where key is a
@@ -128,7 +137,7 @@ class Crypt {
   }
 
   /**
-   * Takes a byte[] and encrypts with a public key.
+   * Takes a byte[] and encrypts with the public key.
    *
    * @param message
    * @return Base64 encrypted String
@@ -220,8 +229,8 @@ class Crypt {
    * AES decrypts provided message with the provided key and iv
    *
    * @param cipherText Base64 encoded cipher to be decrypted, plaintext needs to be valid String
-   * @param ivstring Base64 encoded initalization vector
-   * @param keyString Base64 encoded Key
+   * @param ivstring   Base64 encoded initalization vector
+   * @param keyString  Base64 encoded Key
    * @return The decrypted plaintext
    * @throws BadCryptException if the supplied parameters are invalid
    */
