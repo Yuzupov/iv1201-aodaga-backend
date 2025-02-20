@@ -3,14 +3,12 @@ package com.grupp1.controller;
 import static com.grupp1.controller.PasswordHash.hashPassword;
 import static com.grupp1.controller.PasswordHash.testPassword;
 
-import com.grupp1.api.API;
 import com.grupp1.api.BadApiInputException;
 import com.grupp1.db.DB;
 import com.grupp1.api.ServerException;
 import com.grupp1.db.DBException;
 import com.grupp1.db.NoSuchUserException;
 import com.grupp1.db.UserExistsException;
-import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +16,17 @@ public class Controller {
 
   static final Logger log = LoggerFactory.getLogger(Controller.class);
 
+  /**
+   * Log in user, checks wether supplied credentials are correct and returns a user object if they are
+   *
+   * @param username
+   * @param email
+   * @param password
+   * @return
+   * @throws PasswordException if incorrect password was supplied
+   * @throws NoSuchUserException if no such user exists
+   * @throws ServerException if something unexpected went wrong 
+   */
   public static UserDTO login(String username, String email, String password)
       throws PasswordException, ServerException, NoSuchUserException {
 
@@ -33,6 +42,20 @@ public class Controller {
     }
   }
 
+
+  /**
+   * Create user using supplied Data
+   *
+   * @param firstName
+   * @param lastName
+   * @param personalNumber
+   * @param email
+   * @param userPassword
+   * @param userName
+   * @return
+   * @throws BadApiInputException if supplied arguments are invalid
+   * @throws ServerException if something unexpected went wrong
+   */
   public static boolean register(String firstName,
       String lastName,
       String personalNumber,

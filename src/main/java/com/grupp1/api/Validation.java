@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 class Validation {
 
-  private static final Logger log = API.log;
+  private static final Logger log = LoggerFactory.getLogger(Validation.class);
 
   private static void validateUsername(String username, String fieldName)
       throws ValidationException {
@@ -31,10 +31,10 @@ class Validation {
   }
 
   /**
-   * Checks wether a json o
+   * Checks wether a json object conforms to the requirements for the login endpoint
    *
-   * @param json
-   * @throws ValidationException
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
    */
   static void validateLogin(JSONObject json) throws ValidationException {
     String field = "";
@@ -67,6 +67,12 @@ class Validation {
     }
   }
 
+  /**
+   * Checks wether a json object conforms to the requirements for the register endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
   static void validateRegister(JSONObject json) throws ValidationException {
 
     String[] expectedFields = {
@@ -104,6 +110,13 @@ class Validation {
     }
   }
 
+
+  /**
+   * Checks wether a supplied key is a valid AES key for our purposes
+   *
+   * @param key Base64 encoded AES key
+   * @throws ValidationException if the key is not valid
+   */
   static void validateAESKey(String key) throws ValidationException {
     try {
       byte[] keyBytes = Base64.getDecoder().decode(key);
@@ -119,8 +132,13 @@ class Validation {
 
   }
 
+  /**
+   * Checks wether a json object conforms to the requirements for an encrypted endpoint input json
+   *
+   * @param json
+   * @throws ValidationException if the Json object does not conform
+   */
   static void validateEncrypted(JSONObject json) throws ValidationException {
-
     String[] expectedFields = {
         "cipher",
         "iv",

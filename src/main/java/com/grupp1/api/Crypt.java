@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 class Crypt {
 
-  private static final Logger log = API.log;
+  private static final Logger log = LoggerFactory.getLogger(Crypt.class);
 
   private static final String rsaPrivKey =
       "-----BEGIN PRIVATE KEY-----\n"
@@ -216,6 +216,15 @@ class Crypt {
   }
 
 
+  /**
+   * AES decrypts provided message with the provided key and iv
+   *
+   * @param cipherText Base64 encoded cipher to be decrypted, plaintext needs to be valid String
+   * @param ivstring Base64 encoded initalization vector
+   * @param keyString Base64 encoded Key
+   * @return The decrypted plaintext
+   * @throws BadCryptException if the supplied parameters are invalid
+   */
   private static String decryptAES(String cipherText,
       String ivstring, String keyString) throws BadCryptException {
 

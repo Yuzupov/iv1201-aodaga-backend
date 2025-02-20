@@ -1,6 +1,5 @@
 package com.grupp1.db;
 
-import com.grupp1.api.API;
 import com.grupp1.controller.UserDTO;
 import java.sql.*;
 import org.slf4j.Logger;
@@ -37,13 +36,28 @@ public class DB {
     }
   }
 
+  /**
+   * Fetches a 'person' from the database using username or email.
+   * if both are supplied, username takes precedence.
+   *
+   * @param username
+   * @param email
+   * @return a UserDTO with the information from the DB
+   * @throws NoSuchUserException if no such user is found in the DB
+   * @throws DBException if DB throws an error
+   */
   public static UserDTO getUserByUsernameOrEmail(String username, String email)
       throws NoSuchUserException, DBException {
-    if (username == null) {
+
+    if (username.length() == 0) {
       username = "";
     }
-    if (email == null) {
+    if (username.length() > 0 || email.length() == 0){
       email = "";
+    }
+    if(username.length() + email.length() == 0){
+        log.info("No such user, no username or email was supplied");
+        throw new NoSuchUserException("No such user");
     }
     String query = "SELECT p.name, p.surname, p.email, p.username, p.password, r.name AS role FROM person p JOIN role r ON p.role_id = r.role_id WHERE p.username = ? OR p.email = ?";
     Connection conn = getConn();
@@ -59,6 +73,7 @@ public class DB {
 
       if (!res.next()) {
         conn.rollback();
+        log.info("User: '" + username + email + "' not found in DB");
         throw new NoSuchUserException("No such user");
       }
       UserDTO user = new UserDTO(
@@ -86,6 +101,18 @@ public class DB {
 
   }
 
+  /**
+   * Creates a person in the database 
+   *
+   * @param name
+   * @param surname
+   * @param pnr
+   * @param email
+   * @param password
+   * @param username
+   * @throws UserExistsException if the person already exists (username or email)
+   * @throws DBException if an error in the database occurs
+   */
   public static void createUser(String name, String surname, String pnr, String email,
       String password,
       String username)
