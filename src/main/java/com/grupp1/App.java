@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 public class App {
 
   public static void main(String[] args) {
-    
+
     String port = System.getenv("PORT");
     if (port != null) {
       new API(Integer.parseInt(port));

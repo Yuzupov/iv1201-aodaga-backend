@@ -31,10 +31,11 @@ public class API {
     }
     setUpEndpoints();
     if (System.getenv("PORT") != null) {
-      enableCORS("https://recruitment-application-fronte-593587373fd5.herokuapp.com", "*",
+      enableCORS("https://recruitment-application-fronte-593587373fd5.herokuapp.com",
+          "POST, OPTIONS",
           "content-type");
     } else {
-      enableCORS("http://localhost:5173", "*", "content-type");
+      enableCORS("http://localhost:5173", "POST, OPTIONS", "content-type");
     }
   }
 
@@ -58,7 +59,8 @@ public class API {
   }
 
   String test(Request req, Response res) {
-    return "ble";
+    logRequest(req);
+    return "";
   }
 
   String login(Request req, Response res) {

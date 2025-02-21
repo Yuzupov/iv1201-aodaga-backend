@@ -146,6 +146,11 @@ class Validation {
     for (String field : expectedFields) {
       try {
         String fieldVal = json.getString(field);
+        if (fieldVal.length() == 0) {
+          log.info(
+              "Validation not passed: '" + field + "' is empty");
+          throw new ValidationException("Bad field: '" + field + "'");
+        }
         byte[] fieldBytes = Base64.getDecoder().decode(fieldVal);
         if (field == "iv") {
           if (fieldBytes.length != 16) {

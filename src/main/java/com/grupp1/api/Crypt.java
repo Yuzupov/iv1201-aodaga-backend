@@ -33,7 +33,7 @@ class Crypt {
 
   static {
     String key = System.getenv("RSA_PRIV_KEY");
-    if (key.length() > 0) {
+    if (key != null && key.length() > 0) {
       rsaPrivKey = key;
     } else {
       rsaPrivKey =
@@ -56,15 +56,18 @@ class Crypt {
     }
     //test key
     String message = "test";
+    String messageB64 = Base64.getEncoder()
+        .encodeToString(message.getBytes(StandardCharsets.UTF_8));
     try {
       String crypt = encryptRsaPubKey(message.getBytes(StandardCharsets.UTF_8));
       String decryptedMessage = decryptRSA(crypt);
-      if (!decryptedMessage.equals(message)) {
-        throw new RuntimeException("Bad RSA key");
+      if (!decryptedMessage.equals(messageB64)) {
+        log.error(messageB64 + " does not equal " + decryptedMessage);
+        throw new RuntimeException("Bad RSA key 1");
       }
     } catch (BadCryptException | RuntimeException e) {
-      log.error("RSA_PRIV_KEY failed test.");
-      throw new RuntimeException("Bad RSA key");
+      log.error("RSA_PRIV_KEY failed test." + e.getCause());
+      throw new RuntimeException("Bad RSA key 2");
     }
 
   }
@@ -103,7 +106,6 @@ class Crypt {
    */
   static JSONObject encryptJson(JSONObject json, String symmetricKey) throws BadCryptException {
 
-    System.out.println("testt");
     AESCrypt crypt = encryptAES(json.toString(), symmetricKey);
     JSONObject cryptJson = new JSONObject();
     cryptJson.put("cipher", crypt.cipher());
@@ -252,7 +254,6 @@ class Crypt {
       cipher.init(Cipher.DECRYPT_MODE, sKey, iv);
       byte[] plainText = cipher.doFinal(Base64.getDecoder()
           .decode(cipherText));
-      //System.out.println("decrypted: " + new String(plainText));
       return new String(plainText);
 
     } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
