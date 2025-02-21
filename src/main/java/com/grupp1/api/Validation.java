@@ -14,7 +14,7 @@ class Validation {
 
   private static void validateUsername(String username, String fieldName)
       throws ValidationException {
-    if (!username.matches("^[a-zA-Z0-9]*$")) {
+    if (!username.matches("^[a-zA-Z0-9åäöÅÄÖ]*$")) {
       throw new ValidationException("Invalid '" + fieldName + "' format");
     }
     if (username.length() > 80) {
