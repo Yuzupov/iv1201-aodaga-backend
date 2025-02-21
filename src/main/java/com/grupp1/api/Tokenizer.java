@@ -1,25 +1,47 @@
 package com.grupp1.api;
 
-import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import org.apache.commons.lang3.SerializationUtils;
+import java.util.Base64;
+import org.json.JSONObject;
 
 
-public class Tokenizer {
-  public class TokenDTO implements Serializable {
-    String username;
-    Long expirationDate;
-    TokenDTO(String username, Long expirationDate){
-      this.username = username;
-      this.expirationDate = expirationDate;
-    }
+class Tokenizer {
+
+  record TokenData(String token, String username, Long expirationDate) {
+
   }
-  byte[] createToken(String key, String username){
-    TokenDTO tokenDTO = new TokenDTO(username, Instant.now().getEpochSecond()+86500);
-    byte[] token = SerializationUtils.serialize(tokenDTO);
 
-    TokenDTO deser = SerializationUtils.deserialize(token);
-    System.out.println(deser.username);
-    return token;
+  /**
+   * Takes in a username and output an object, TokenData. TokenData contains a String username, long
+   * expiration date and byte[] token which is a byte representation of a stringified JSON object
+   * containing the username and expiration date.
+   *
+   * @param username
+   * @return TokenData object
+   */
+  static TokenData createToken(String username) {
+    long expirationTime = Instant.now().getEpochSecond() + 86500;
+    JSONObject json = new JSONObject();
+    json.put("username", username);
+    json.put("expiration", expirationTime);
+    String token = Crypt.encryptRsaPubKey(json.toString().getBytes(StandardCharsets.UTF_8));
+    return new TokenData(token, username, expirationTime);
+  }
+
+  /**
+   * Takes in a token and recreates the TokenData object from the information it contains.
+   *
+   * @param token
+   * @return TokenData based on a valid token
+   * @throws ValidationException
+   */
+  static TokenData extreactToken(String token) throws ValidationException, BadCryptException {
+    String decryptedToken = Crypt.decryptRSA(token);
+    Validation.validateToken(decryptedToken);
+    byte[] tokenBytes = Base64.getDecoder().decode(token);
+    String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
+    JSONObject json = new JSONObject(jsonString);
+    return new TokenData(token, json.getString("username"), json.getLong("expiration"));
   }
 }

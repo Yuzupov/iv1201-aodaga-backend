@@ -1,13 +1,78 @@
 package com.grupp1.api;
 
-import com.grupp1.api.Tokenizer.TokenDTO;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import org.apache.commons.lang3.SerializationUtils;
+import java.util.Base64;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class Validation {
 
+  private static final Logger log = LoggerFactory.getLogger(Validation.class);
+
+  private static void validateUsername(String username, String fieldName)
+      throws ValidationException {
+    if (!username.matches("^[a-zA-Z0-9]*$")) {
+      throw new ValidationException("Invalid '" + fieldName + "' format");
+    }
+    if (username.length() > 80) {
+      throw new ValidationException("'" + fieldName + "' too long");
+    }
+  }
+
+  private static void validateEmail(String email, String fieldName) throws ValidationException {
+    if (!email.matches(
+        "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])"
+    )) {
+      throw new ValidationException("Invalid '" + fieldName + "' format");
+    }
+  }
+
+  /**
+   * Checks wether a json object conforms to the requirements for the login endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
+  static void validateLogin(JSONObject json) throws ValidationException {
+    String field = "";
+    String username;
+    String email;
+    try {
+      boolean hasEmail = false;
+      boolean hasUsername = false;
+      field = "username";
+      if (json.has(field)) {
+        username = json.getString(field);
+        validateUsername(username, field);
+        hasUsername = true;
+      }
+      field = "userEmail";
+      if (json.has(field)) {
+        email = json.getString(field);
+        validateEmail(email, field);
+        hasUsername = true;
+      }
+      if (!hasUsername && !hasEmail) {
+        throw new ValidationException("missing 'username' or 'userEmail' field");
+      }
+      field = "userPassword";
+      json.getString(field);
+
+    } catch (JSONException e) {
+      e.printStackTrace();
+      throw new ValidationException("bad or missing '" + field + "' field");
+    }
+  }
+
+  /**
+   * Checks wether a json object conforms to the requirements for the register endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
   static void validateRegister(JSONObject json) throws ValidationException {
 
     String[] expectedFields = {
@@ -33,22 +98,62 @@ class Validation {
           }
         }
         if (field.equals("email")) {
-          //RFC 5322
-          if (!fieldVal.matches(
-              "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])")) {
-            throw new ValidationException("Invalid '" + field + "' format");
-          }
-
+          validateEmail(fieldVal, field);
+        }
+        if (field.equals("userName")) {
+          validateUsername(fieldVal, field);
         }
       } catch (JSONException e) {
         e.printStackTrace();
-        throw new ValidationException("missing '" + field + "' parameter");
+        throw new ValidationException("missing '" + field + "' field");
       }
     }
   }
 
-  static void validateEncrypted(JSONObject json) throws ValidationException {
+  /**
+   * Takes a Json object and validates for existing token-field.
+   *
+   * @param json
+   * @throws ValidationException
+   */
+  static void validateApplicants(JSONObject json) throws ValidationException {
+    try {
+      json.getString("token");
+    } catch (JSONException e) {
+      e.printStackTrace();
+      throw new ValidationException("missing 'token' field");
+    }
+  }
 
+
+  /**
+   * Checks wether a supplied key is a valid AES key for our purposes
+   *
+   * @param key Base64 encoded AES key
+   * @throws ValidationException if the key is not valid
+   */
+  static void validateAESKey(String key) throws ValidationException {
+    try {
+      byte[] keyBytes = Base64.getDecoder().decode(key);
+
+      if (keyBytes.length != 32) {
+        log.info("Validation not passed: key is " + keyBytes.length + " bytes long, must be 32.");
+        throw new ValidationException("invalid key");
+      }
+    } catch (IllegalArgumentException e) {
+      log.info("Validation not passed: decoded key invalid Base64: " + e.getMessage());
+      throw new ValidationException("'" + key + "' not valid");
+    }
+
+  }
+
+  /**
+   * Checks wether a json object conforms to the requirements for an encrypted endpoint input json
+   *
+   * @param json
+   * @throws ValidationException if the Json object does not conform
+   */
+  static void validateEncrypted(JSONObject json) throws ValidationException {
     String[] expectedFields = {
         "cipher",
         "iv",
@@ -56,18 +161,72 @@ class Validation {
     for (String field : expectedFields) {
       try {
         String fieldVal = json.getString(field);
+        if (fieldVal.length() == 0) {
+          log.info(
+              "Validation not passed: '" + field + "' is empty");
+          throw new ValidationException("Bad field: '" + field + "'");
+        }
+        byte[] fieldBytes = Base64.getDecoder().decode(fieldVal);
+        if (field == "iv") {
+          if (fieldBytes.length != 16) {
+            log.info(
+                "Validation not passed: iv is " + fieldBytes.length + " bytes long, must be 16.");
+            throw new ValidationException("bad iv length");
+          }
+        }
+        if (field == "key") {
+          if (fieldBytes.length != 128) {
+            log.info(
+                "Validation not passed: encrypted key is " + fieldBytes.length
+                    + " bytes long, must be 128.");
+            throw new ValidationException("bad key crypt length");
+          }
+        }
       } catch (JSONException e) {
-        e.printStackTrace();
-        throw new ValidationException("missing '" + field + "' parameter");
+        log.info("Validation not passed: " + e.getMessage());
+        throw new ValidationException("bad or missing '" + field + "' field");
+      } catch (IllegalArgumentException e) {
+        log.info("Validation not passed: '" + field + "' invalid Base64: " + e.getMessage());
+        throw new ValidationException("'" + field + "' not valid Base64");
       }
     }
-
-  }
-  static boolean validateToken(byte[] token, String username){
-    TokenDTO deserializedToken = SerializationUtils.deserialize(token);
-    boolean validTime = deserializedToken.expirationDate > Instant.now().getEpochSecond();
-    boolean validName = deserializedToken.username.equals(username);
-    return validName && validTime;
   }
 
+  /**
+   * Takes in byte[] Token Checks that token can parse into a JSON object Checks that said object
+   * contains the correct fields Check that token is not expired throws exceptions in case something
+   * is wrong.
+   *
+   * @param token
+   * @throws ValidationException
+   */
+  static void validateToken(String token) throws ValidationException {
+    JSONObject json;
+    String field = "";
+    try {
+      byte[] tokenBytes = Base64.getDecoder().decode(token);
+      String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
+      json = new JSONObject(jsonString);
+    } catch (JSONException e) {
+      e.printStackTrace();
+      throw new ValidationException("Token not valid" + e);
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+      throw new ValidationException("token is wrong of wrong type");
+    }
+
+    try {
+      field = "username";
+      json.getString(field);
+      field = "expiration";
+      long expirationTime = json.getLong(field);
+
+      if (!(expirationTime > Instant.now().getEpochSecond())) {
+        throw new ValidationException("Token is Expired");
+      }
+    } catch (JSONException e) {
+      e.printStackTrace();
+      throw new ValidationException("missing " + field + "field");
+    }
+  }
 }
