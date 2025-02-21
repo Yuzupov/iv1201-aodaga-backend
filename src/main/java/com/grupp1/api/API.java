@@ -100,7 +100,8 @@ public class API {
       System.out.println("test");
       System.out.println(responseJson.toString());
 
-      return Crypt.encryptJson(responseJson, json.getString("symmetricKey")).toString();
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
 
     } catch (ValidationException | NoSuchUserException e) {
       res.status(400);
@@ -131,7 +132,9 @@ public class API {
       String userPassword = json.getString("userPassword");
       String userName = json.getString("username");
       Controller.register(firstName, lastName, personalNumber, email, userPassword, userName);
-      return "";
+      JSONObject responseJson = new JSONObject();
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
 
     } catch (APIException e) {
       res.status(400);

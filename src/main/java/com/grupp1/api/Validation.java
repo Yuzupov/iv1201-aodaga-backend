@@ -157,7 +157,8 @@ class Validation {
     String[] expectedFields = {
         "cipher",
         "iv",
-        "key"};
+        "key",
+        "timestamp"};
     for (String field : expectedFields) {
       try {
         String fieldVal = json.getString(field);
@@ -166,20 +167,22 @@ class Validation {
               "Validation not passed: '" + field + "' is empty");
           throw new ValidationException("Bad field: '" + field + "'");
         }
-        byte[] fieldBytes = Base64.getDecoder().decode(fieldVal);
-        if (field == "iv") {
-          if (fieldBytes.length != 16) {
-            log.info(
-                "Validation not passed: iv is " + fieldBytes.length + " bytes long, must be 16.");
-            throw new ValidationException("bad iv length");
+        if (!field.equals("timestamp")) {
+          byte[] fieldBytes = Base64.getDecoder().decode(fieldVal);
+          if (field.equals("iv")) {
+            if (fieldBytes.length != 16) {
+              log.info(
+                  "Validation not passed: iv is " + fieldBytes.length + " bytes long, must be 16.");
+              throw new ValidationException("bad iv length");
+            }
           }
-        }
-        if (field == "key") {
-          if (fieldBytes.length != 128) {
-            log.info(
-                "Validation not passed: encrypted key is " + fieldBytes.length
-                    + " bytes long, must be 128.");
-            throw new ValidationException("bad key crypt length");
+          if (field.equals("key")) {
+            if (fieldBytes.length != 128) {
+              log.info(
+                  "Validation not passed: encrypted key is " + fieldBytes.length
+                      + " bytes long, must be 128.");
+              throw new ValidationException("bad key crypt length");
+            }
           }
         }
       } catch (JSONException e) {

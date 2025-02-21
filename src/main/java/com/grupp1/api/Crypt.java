@@ -88,9 +88,11 @@ class Crypt {
     String crypt = json.getString("cipher");
     String iv = json.getString("iv");
     String key = decryptRSA(encryptedKey);
+    String timestamp = json.getString("timestamp");
     String decryptedJsonString = decryptAES(crypt, iv, key);
     JSONObject decryptedJson = Json.parseJson(decryptedJsonString);
     decryptedJson.put("symmetricKey", key);
+    decryptedJson.put("timestamp", timestamp);
     return decryptedJson;
   }
 
@@ -104,12 +106,17 @@ class Crypt {
    * and encrypted
    * @throws BadCryptException
    */
-  static JSONObject encryptJson(JSONObject json, String symmetricKey) throws BadCryptException {
+  static JSONObject encryptJson(JSONObject json, String symmetricKey, String timestamp)
+      throws BadCryptException {
 
     AESCrypt crypt = encryptAES(json.toString(), symmetricKey);
+    AESCrypt signature = encryptAES(encryptRsaPrivKey(timestamp), symmetricKey);
+
     JSONObject cryptJson = new JSONObject();
     cryptJson.put("cipher", crypt.cipher());
     cryptJson.put("iv", crypt.iv());
+    cryptJson.put("signature", signature.cipher());
+    cryptJson.put("signatureIv", signature.iv());
     return cryptJson;
   }
 
@@ -152,10 +159,42 @@ class Crypt {
   }
 
   /**
+   * Takes a plaintext String and encrypts with the private key.
+   *
+   * @param message
+   * @return Base64 encoded encrypted String
+   */
+
+  public static String encryptRsaPrivKey(String message) {
+    try {
+      String privateKeyPEM = rsaPrivKey
+          .replace("-----BEGIN PRIVATE KEY-----", "")
+          .replaceAll(System.lineSeparator(), "")
+          .replace("-----END PRIVATE KEY-----", "");
+      byte[] keyBytes = Base64.getDecoder().decode(privateKeyPEM);
+
+      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+      PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+      PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+
+      Cipher cipher = Cipher.getInstance("RSA");
+      cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+
+      byte[] encrypted = cipher.doFinal(message.getBytes(StandardCharsets.UTF_8));
+      return Base64.getEncoder().encodeToString(encrypted);
+
+    } catch (NoSuchAlgorithmException | InvalidKeyException | InvalidKeySpecException |
+             NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
+      throw new RuntimeException(e);
+    }
+
+  }
+
+  /**
    * Takes a byte[] and encrypts with the public key.
    *
    * @param message
-   * @return Base64 encrypted String
+   * @return Base64 encoded encrypted String
    */
   public static String encryptRsaPubKey(byte[] message) {
     try {
