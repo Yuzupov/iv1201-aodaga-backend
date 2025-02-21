@@ -7,7 +7,7 @@ import org.json.JSONObject;
 
 
 class Tokenizer {
-  
+
   record TokenData(String token, String username, Long expirationDate) {
 
   }
@@ -36,7 +36,7 @@ class Tokenizer {
    * @return TokenData based on a valid token
    * @throws ValidationException
    */
-  static TokenData extreactToken(String token) throws ValidationException {
+  static TokenData extreactToken(String token) throws ValidationException, BadCryptException {
     String decryptedToken = Crypt.decryptRSA(token);
     Validation.validateToken(decryptedToken);
     byte[] tokenBytes = Base64.getDecoder().decode(token);

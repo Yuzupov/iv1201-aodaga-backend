@@ -143,6 +143,7 @@ public class API {
   }
 
   String applicants(Request req, Response res) {
+    logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
       Validation.validateEncrypted(cryptJson);
@@ -155,15 +156,23 @@ public class API {
 
       res.status(200);
       return "if you gaze long into an abyss, the abyss will also gaze into you.";
-      // Must fix catches
-    } catch (ValidationException e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
+      // TODO Must fix catches
+    } catch (ValidationException | NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
     } catch (BadCryptException e) {
-      throw new RuntimeException(e);
+      res.status(400);
+      return "Crypt error:\n" + e.getMessage() + "\r\n\r\n"; //TODO crypt error string change
     } catch (IllegalRoleException e) {
-      throw new RuntimeException(e);
+      res.status(403);
+      return "Forbidden:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
+
     }
+
+
   }
 
   private void logRequest(Request req) {

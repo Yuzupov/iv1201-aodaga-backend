@@ -125,7 +125,6 @@ class Validation {
     }
   }
 
-  static void validateEncrypted(JSONObject json) throws ValidationException {
 
   /**
    * Checks wether a supplied key is a valid AES key for our purposes
