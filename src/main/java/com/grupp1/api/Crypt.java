@@ -8,6 +8,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
@@ -21,6 +23,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.jcajce.provider.asymmetric.rsa.PSSSignatureSpi.SHA256withRSA;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,7 +113,7 @@ class Crypt {
       throws BadCryptException {
 
     AESCrypt crypt = encryptAES(json.toString(), symmetricKey);
-    AESCrypt signature = encryptAES(encryptRsaPrivKey(timestamp), symmetricKey);
+    AESCrypt signature = encryptAES(signRSA(timestamp), symmetricKey);
 
     JSONObject cryptJson = new JSONObject();
     cryptJson.put("cipher", crypt.cipher());
@@ -165,7 +168,7 @@ class Crypt {
    * @return Base64 encoded encrypted String
    */
 
-  public static String encryptRsaPrivKey(String message) {
+  public static String signRSA(String message) {
     try {
       String privateKeyPEM = rsaPrivKey
           .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -175,16 +178,26 @@ class Crypt {
 
       KeyFactory keyFactory = KeyFactory.getInstance("RSA");
       PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
-      PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+      RSAPrivateKey privateKey = (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
+      //---
+      Signature privateSignature = Signature.getInstance("SHA256withRSA");
+      privateSignature.initSign(privateKey);
+      privateSignature.update(message.getBytes(StandardCharsets.UTF_8));
 
+      byte[] signature = privateSignature.sign();
+      return Base64.getEncoder().encodeToString(signature);
+/*
       Cipher cipher = Cipher.getInstance("RSA");
-      cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+      cipher.init(Cipher, privateKey);
 
       byte[] encrypted = cipher.doFinal(message.getBytes(StandardCharsets.UTF_8));
       return Base64.getEncoder().encodeToString(encrypted);
-
-    } catch (NoSuchAlgorithmException | InvalidKeyException | InvalidKeySpecException |
-             NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
+*/
+    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+      throw new RuntimeException(e);
+    } catch (SignatureException e) {
+      throw new RuntimeException(e);
+    } catch (InvalidKeyException e) {
       throw new RuntimeException(e);
     }
 
