@@ -78,4 +78,26 @@ public class Controller {
 
   }
 
+  /**
+   * Will request User data and check if user is in fact allowed to make the intended request.
+   *
+   * @param username
+   * @return ApplicantsDTO, a read only record of all applicants.
+   * @throws IllegalRoleException
+   */
+  public static ApplicantsDTO applicants(String username) throws IllegalRoleException {
+    try {
+      UserDTO user = DB.getUserByUsernameOrEmail(username, "");
+      if (!Objects.equals(user.role(), "recruiter")) {
+        throw new IllegalRoleException(
+            "Invalid Role '" + user.role() + " for the requested Action");
+      }
+      return DB.applicants();
+
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    } catch (NoSuchUserException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

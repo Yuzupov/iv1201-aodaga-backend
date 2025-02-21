@@ -2,12 +2,13 @@ package com.grupp1.api;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import org.json.JSONObject;
 
 
 class Tokenizer {
-
-  static record TokenData(String token, String username, Long expirationDate) {
+  
+  record TokenData(String token, String username, Long expirationDate) {
 
   }
 
@@ -29,14 +30,18 @@ class Tokenizer {
   }
 
   /**
-   * Extracts the username from the byte[] token and returns a string
+   * Takes in a token and recreates the TokenData object from the information it contains.
    *
    * @param token
-   * @return username
+   * @return TokenData based on a valid token
+   * @throws ValidationException
    */
-  static String extractUsername(byte[] token) {
-    String jsonString = new String(token, StandardCharsets.UTF_8);
+  static TokenData extreactToken(String token) throws ValidationException {
+    String decryptedToken = Crypt.decryptRSA(token);
+    Validation.validateToken(decryptedToken);
+    byte[] tokenBytes = Base64.getDecoder().decode(token);
+    String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
     JSONObject json = new JSONObject(jsonString);
-    return json.getString("username");
+    return new TokenData(token, json.getString("username"), json.getLong("expiration"));
   }
 }

@@ -110,6 +110,22 @@ class Validation {
     }
   }
 
+  /**
+   * Takes a Json object and validates for existing token-field.
+   *
+   * @param json
+   * @throws ValidationException
+   */
+  static void validateApplicants(JSONObject json) throws ValidationException {
+    try {
+      json.getString("token");
+    } catch (JSONException e) {
+      e.printStackTrace();
+      throw new ValidationException("missing 'token' field");
+    }
+  }
+
+  static void validateEncrypted(JSONObject json) throws ValidationException {
 
   /**
    * Checks wether a supplied key is a valid AES key for our purposes
@@ -175,7 +191,6 @@ class Validation {
         throw new ValidationException("'" + field + "' not valid Base64");
       }
     }
-
   }
 
   /**
@@ -186,16 +201,21 @@ class Validation {
    * @param token
    * @throws ValidationException
    */
-  static void validateToken(byte[] token) throws ValidationException {
-    JSONObject json = null;
+  static void validateToken(String token) throws ValidationException {
+    JSONObject json;
     String field = "";
     try {
-      String jsonString = new String(token, StandardCharsets.UTF_8);
+      byte[] tokenBytes = Base64.getDecoder().decode(token);
+      String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
       json = new JSONObject(jsonString);
     } catch (JSONException e) {
       e.printStackTrace();
       throw new ValidationException("Token not valid" + e);
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+      throw new ValidationException("token is wrong of wrong type");
     }
+
     try {
       field = "username";
       json.getString(field);
