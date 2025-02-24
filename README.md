@@ -17,6 +17,10 @@ Navigate to the directory that contains the back-end repository.
 Enter the following prompt:
 $ git push heroku main
 
+# Testing
+After each deployment to Heroku the application should be tested immediately in the following browsers:
+Mozilla Firefox, Google Chrome, Microsoft Edge, Safari.
+
 # Architectural Decisions
 ## Application
 Monolithic
