@@ -9,6 +9,7 @@ import com.grupp1.api.ServerException;
 import com.grupp1.db.DBException;
 import com.grupp1.db.NoSuchUserException;
 import com.grupp1.db.UserExistsException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +87,7 @@ public class Controller {
    * @return ApplicantsDTO, a read only record of all applicants.
    * @throws IllegalRoleException
    */
-  public static ApplicantsDTO applicants(String username)
+  public static List<ApplicantDTO> applicants(String username)
       throws IllegalRoleException, ServerException, NoSuchUserException {
     try {
       UserDTO user = DB.getUserByUsernameOrEmail(username, "");

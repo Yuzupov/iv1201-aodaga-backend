@@ -1,8 +1,13 @@
 package com.grupp1.db;
 
-import com.grupp1.controller.ApplicantsDTO;
+import com.grupp1.controller.ApplicantDTO;
+import com.grupp1.controller.Availability;
 import com.grupp1.controller.UserDTO;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,14 +43,14 @@ public class DB {
   }
 
   /**
-   * Fetches a 'person' from the database using username or email.
-   * if both are supplied, username takes precedence.
+   * Fetches a 'person' from the database using username or email. if both are supplied, username
+   * takes precedence.
    *
    * @param username
    * @param email
    * @return a UserDTO with the information from the DB
    * @throws NoSuchUserException if no such user is found in the DB
-   * @throws DBException if DB throws an error
+   * @throws DBException         if DB throws an error
    */
   public static UserDTO getUserByUsernameOrEmail(String username, String email)
       throws NoSuchUserException, DBException {
@@ -53,12 +58,12 @@ public class DB {
     if (username.length() == 0) {
       username = "";
     }
-    if (username.length() > 0 || email.length() == 0){
+    if (username.length() > 0 || email.length() == 0) {
       email = "";
     }
-    if(username.length() + email.length() == 0){
-        log.info("No such user, no username or email was supplied");
-        throw new NoSuchUserException("No such user");
+    if (username.length() + email.length() == 0) {
+      log.info("No such user, no username or email was supplied");
+      throw new NoSuchUserException("No such user");
     }
     String query = "SELECT p.name, p.surname, p.email, p.username, p.password, r.name AS role FROM person p JOIN role r ON p.role_id = r.role_id WHERE p.username = ? OR p.email = ?";
     Connection conn = getConn();
@@ -103,7 +108,7 @@ public class DB {
   }
 
   /**
-   * Creates a person in the database 
+   * Creates a person in the database
    *
    * @param name
    * @param surname
@@ -112,7 +117,7 @@ public class DB {
    * @param password
    * @param username
    * @throws UserExistsException if the person already exists (username or email)
-   * @throws DBException if an error in the database occurs
+   * @throws DBException         if an error in the database occurs
    */
   public static void createUser(String name, String surname, String pnr, String email,
       String password,
@@ -170,7 +175,70 @@ public class DB {
 
   }
 
-  public static ApplicantsDTO applicants() {
-    return null;
+  /*
+  private record PrivateAvailability(
+      int person_id,
+      String from,
+      String to
+  ) {
+
+  }
+
+   */
+
+  public static List<ApplicantDTO> applicants() throws DBException {
+    String query_availability = "SELECT * FROM availability ORDER BY person_id";
+
+    String query_person = "SELECT p.person_id, p.name, p.surname, a.status from person p JOIN application a ON p.person_id = a.person_id";
+    Connection conn = getConn();
+    try {
+      conn.setAutoCommit(false);
+      PreparedStatement stmt_availability = conn.prepareStatement(query_availability);
+
+      ResultSet res_a = stmt_availability.executeQuery();
+
+      Map<Integer, List<Availability>> availabilities = new HashMap<>();
+      while (res_a.next()) {
+        int person_id = res_a.getInt("person_id");
+        String from_date = res_a.getDate("from_date").toString();
+        String to_date = res_a.getDate("to_date").toString();
+        if (!availabilities.containsKey(person_id)) {
+          availabilities.put(person_id, new ArrayList<>());
+        }
+        availabilities.get(person_id).add(new Availability(from_date, to_date));
+      }
+
+      PreparedStatement stmt_person = conn.prepareStatement(query_person);
+
+      ResultSet res_p = stmt_person.executeQuery();
+      List<ApplicantDTO> applicants = new ArrayList<>();
+      while (res_p.next()) {
+        int personID = res_p.getInt("person_id");
+        String name = res_p.getString("name");
+        String surname = res_p.getString("surname");
+        String status = res_p.getString("status");
+        List<Availability> applicantAvailabilities = availabilities.get(personID);
+        applicants.add(new ApplicantDTO(name, surname, status, applicantAvailabilities));
+      }
+
+      conn.commit();
+
+      System.out.println(applicants);
+      return applicants;
+
+    } catch (SQLException e) {
+      try {
+        conn.rollback();
+      } catch (SQLException ex) {
+        log.error("SQLException: " + ex.getMessage());
+        throw new DBException(ex);
+      }
+      log.error("SQLException: " + e.getMessage());
+      throw new DBException(e);
+    }
+  }
+
+  public static void main(String[] args) throws DBException {
+    applicants();
   }
 }
