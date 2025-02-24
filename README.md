@@ -2,11 +2,14 @@
 the project repo for architecture and design of global applications
 
 # First Section: Installing
-Make a directory and clone this repository to get access to the source code. Navigate to the front-end directory and do the following:
-All the dependencies for the front-end part should be installed with 'npm install' and then run it with 'npm run dev'.
-The code is currently displayed on 'http://localhost:5173/'
+## Back-end Server
+For the back-end it is required to have Java 17 for development. The back-end uses Maven to build and it is therefore required to have Maven installed. Navigate to the root directory of the back-end and run the Maven build command: mvn package. Finally run the main() method in the API class to start it.
 
-For the back-end it is required to have Java 17 for development and PostgreSQL locally to emulate the DB. The migration script is in the root of the project. Run the SQL script and then run the main method in the back-end and it should work in conjunction with the front-end on localhost.
+## Database
+This application uses PostgreSQL to store data. To initialize the database run the following script:
+psql -U postgres -d aodaga -f existing-database.sql
+
+This assumes you have the sql file available on Canvas.
 
 # Architectural Decisions
 ## Application
@@ -20,13 +23,18 @@ MVC (Model-View-Controller) with RESTapi endpoints.
 ## Application
 Mixed
 ## Front-end
-JavaScript with React
+JavaScript with React framework
 ## Back-end
 Java with Spark
 ## Database
 PostgreSQL
 
 # Misc
+## Build tools
+### Back-end
+Maven
+### Front-end
+Vite
 ## Hosting Service
 Heroku
 ## Documentation
