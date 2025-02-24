@@ -11,6 +11,12 @@ psql -U postgres -d aodaga -f existing-database.sql
 
 This assumes you have the sql file available on Canvas.
 
+# Deploying changes
+To deploy changes it is necessary to push it to the upstream at Heroku. This can be done by doing the following:
+Navigate to the directory that contains the back-end repository.
+Enter the following prompt:
+$ git push heroku main
+
 # Architectural Decisions
 ## Application
 Monolithic
