@@ -9,21 +9,41 @@ public class Validation {
 
   static final Logger log = LoggerFactory.getLogger(Controller.class);
 
-  static void validateGetUserByUsernameOrEmail(String username, String email) {
+  /**
+   * Validation for input to the getUserByUsenameOrEmail function in DB throws error if validation
+   * fails
+   *
+   * @param username
+   * @param email
+   * @throws DBValidationException if validation fails
+   */
+  static void validateGetUserByUsernameOrEmail(String username, String email)
+      throws DBValidationException {
     validateUsername(username);
     validateEmail(email);
   }
 
+  /**
+   * Validation for input to the createUser function in DB throws error if validation fails
+   *
+   * @param name
+   * @param surname
+   * @param pnr
+   * @param email
+   * @param passwordHash
+   * @param username
+   * @throws DBValidationException if validation fails
+   */
   static void validateCreateUser(String name, String surname, String pnr, String email,
       String passwordHash,
-      String username) {
+      String username) throws DBValidationException {
     validateEmail(email);
     validateUsername(username);
     validatePersonalNumber(pnr);
     validatePasswordHash(passwordHash);
   }
 
-  private static void validatePasswordHash(String passwordHash) {
+  private static void validatePasswordHash(String passwordHash) throws DBValidationException {
     if (!passwordHash.matches("^\\$[\\p{L}\\d\\/]{22}==\\$[\\p{L}\\d\\/]{43}=$")) {
       log.error("Validation not passed: Invalid password hash format.");
       throw new DBValidationException(

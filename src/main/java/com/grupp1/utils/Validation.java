@@ -39,6 +39,13 @@ public class Validation {
     }
   }
 
+
+  /**
+   * Validate personalNumber. silent if email conforms to the format, otherwise throws an error.
+   *
+   * @param personalNumber the username to validate
+   * @throws IllegalArgumentException if validation fails
+   */
   public static void validatePersonalNumber(String personalNumber) {
     if (!personalNumber.matches("\\d{8}-\\d{4}")) {
       throw new IllegalArgumentException("Invalid personalNumber");
