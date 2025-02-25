@@ -92,6 +92,7 @@ public class Controller {
     try {
       UserDTO user = DB.getUserByUsernameOrEmail(username, "");
       if (!user.role().equals("recruiter")) {
+        log.info("Invalid Role '" + user.role() + " for the requested Action");
         throw new IllegalRoleException(
             "Invalid Role '" + user.role() + " for the requested Action");
       }

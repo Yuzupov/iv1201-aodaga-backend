@@ -192,12 +192,9 @@ class Validation {
       byte[] tokenBytes = Base64.getDecoder().decode(token);
       String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
       json = new JSONObject(jsonString);
-    } catch (JSONException e) {
-      e.printStackTrace();
+    } catch (JSONException | IllegalArgumentException e) {
+      log.info("Not a valid token");
       throw new ValidationException("Token not valid" + e);
-    } catch (IllegalArgumentException e) {
-      e.printStackTrace();
-      throw new ValidationException("token is wrong of wrong type");
     }
 
     try {
@@ -207,11 +204,12 @@ class Validation {
       long expirationTime = json.getLong(field);
 
       if (!(expirationTime > Instant.now().getEpochSecond())) {
+        log.info("Token is expired");
         throw new ValidationException("Token is Expired");
       }
     } catch (JSONException e) {
-      e.printStackTrace();
-      throw new ValidationException("missing " + field + "field");
+      log.info("missing " + field + " field");
+      throw new ValidationException("missing " + field + " field");
     }
   }
 
