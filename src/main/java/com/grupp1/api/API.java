@@ -1,12 +1,14 @@
 package com.grupp1.api;
 
 import com.grupp1.api.Tokenizer.TokenData;
+import com.grupp1.controller.ApplicantDTO;
 import com.grupp1.controller.Controller;
 
 import com.grupp1.controller.IllegalRoleException;
 import com.grupp1.controller.PasswordException;
 import com.grupp1.controller.UserDTO;
 import com.grupp1.db.NoSuchUserException;
+import java.util.List;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,16 +143,20 @@ public class API {
     logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
-      Validation.validateEncrypted(cryptJson);
       JSONObject json = Crypt.decryptJson(cryptJson);
 
       Validation.validateApplicants(json);
       String token = json.getString("token");
       TokenData tokenData = Tokenizer.extreactToken(token);
-      Controller.applicants(tokenData.username());
+      List<ApplicantDTO> applicants = Controller.applicants(tokenData.username());
 
+      json.put("applicants", applicants);
+      System.out.println(json);
       res.status(200);
-      return "if you gaze long into an abyss, the abyss will also gaze into you.";
+
+      JSONObject responseJson = new JSONObject();
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
       // TODO Must fix catches
     } catch (ValidationException | NoSuchUserException e) {
       res.status(400);
