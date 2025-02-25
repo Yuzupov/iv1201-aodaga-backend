@@ -7,7 +7,6 @@ import com.grupp1.controller.IllegalRoleException;
 import com.grupp1.controller.PasswordException;
 import com.grupp1.controller.UserDTO;
 import com.grupp1.db.NoSuchUserException;
-import java.util.Arrays;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,13 +67,6 @@ public class API {
   String login(Request req, Response res) {
     logRequest(req);
     try {
-      //testcode
-      /*
-      JSONObject json = Json.parseJson(req.body());
-      json.put("symmetricKey",
-          Crypt.decryptRSA(
-              "sG6xj4VkLWVOHBwJDSVyi5AWqT3ix6w2/2TQj8pU95Rc/RBqgaPVtp2WiRMMEL/FpurXpv/Y6g3jyT5mdx6KLcxI0jmqQsFkic96s9y6kaKxSoTCGrTrOwMixLjm9dkHmYEzdkGjrPh38a3XymeFOVoyLK07YuvMU3uJ8CdgRzw="));
-      */
       JSONObject cryptJson = Json.parseJson(req.body());
       JSONObject json = Crypt.decryptJson(cryptJson);
 
@@ -174,8 +166,6 @@ public class API {
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
 
     }
-
-
   }
 
   private void logRequest(Request req) {

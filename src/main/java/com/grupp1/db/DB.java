@@ -54,7 +54,7 @@ public class DB {
    */
   public static UserDTO getUserByUsernameOrEmail(String username, String email)
       throws NoSuchUserException, DBException {
-
+    Validation.validateGetUserByUsernameOrEmail(username, email);
     if (username.length() == 0) {
       username = "";
     }
@@ -114,15 +114,16 @@ public class DB {
    * @param surname
    * @param pnr
    * @param email
-   * @param password
+   * @param passwordHash
    * @param username
    * @throws UserExistsException if the person already exists (username or email)
    * @throws DBException         if an error in the database occurs
    */
   public static void createUser(String name, String surname, String pnr, String email,
-      String password,
+      String passwordHash,
       String username)
       throws UserExistsException, DBException {
+    Validation.validateCreateUser(name, surname, pnr, email, passwordHash, username);
 
     Connection conn = getConn();
     try {
@@ -152,7 +153,7 @@ public class DB {
       stmt.setString(2, surname);
       stmt.setString(3, pnr);
       stmt.setString(4, email);
-      stmt.setString(5, password);
+      stmt.setString(5, passwordHash);
       stmt.setString(6, username);
       stmt.setInt(7, role_id);
       //System.out.println(stmt);
@@ -236,9 +237,5 @@ public class DB {
       log.error("SQLException: " + e.getMessage());
       throw new DBException(e);
     }
-  }
-
-  public static void main(String[] args) throws DBException {
-    applicants();
   }
 }
