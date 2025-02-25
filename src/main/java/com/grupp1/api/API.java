@@ -183,12 +183,11 @@ public class API {
         applicantsList.add(appli);
       }
       json.put("applicants", applicantsList);// this does not work
-      
+
       System.out.println(json);
 
       res.status(200);
-      JSONObject responseJson = new JSONObject();
-      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+      return Crypt.encryptJson(json, json.getString("symmetricKey"),
           json.getString("timestamp")).toString();
       // TODO Must fix catches
     } catch (ValidationException | NoSuchUserException e) {

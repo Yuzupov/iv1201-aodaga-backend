@@ -219,6 +219,9 @@ public class DB {
         String surname = res_p.getString("surname");
         String status = res_p.getString("status");
         List<Availability> applicantAvailabilities = availabilities.get(personID);
+        if (applicantAvailabilities == null) {
+          applicantAvailabilities = new ArrayList<>();
+        }
         applicants.add(new ApplicantDTO(name, surname, status, applicantAvailabilities));
       }
 
