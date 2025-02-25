@@ -2,11 +2,13 @@ package com.grupp1.api;
 
 import com.grupp1.api.Tokenizer.TokenData;
 import com.grupp1.controller.ApplicantDTO;
+import com.grupp1.controller.Availability;
 import com.grupp1.controller.Controller;
 import com.grupp1.controller.IllegalRoleException;
 import com.grupp1.controller.PasswordException;
 import com.grupp1.controller.UserDTO;
 import com.grupp1.db.NoSuchUserException;
+import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -155,10 +157,33 @@ public class API {
 
       Validation.validateApplicants(json);
       String token = json.getString("token");
-      TokenData tokenData = Tokenizer.extreactToken(token);
+      TokenData tokenData = Tokenizer.extractToken(token);
       List<ApplicantDTO> applicants = Controller.applicants(tokenData.username());
-      json.put("applicants", applicants);
 
+      //applicants is a list of applicantDTOs
+      //applicant DTO innehåller strängar och en lista av availabilitys
+      // en availability innehåller en to och en from sträng
+
+      List<JSONObject> applicantsList = new ArrayList<>();
+      for (ApplicantDTO applicant : applicants) {
+        JSONObject appli = new JSONObject();
+        List<JSONObject> availabilities = new ArrayList<>();
+        for (Availability date : applicant.availabilities()) {
+          JSONObject available = new JSONObject();
+          String fromDate = date.from();
+          String toDate = date.to();
+          available.put("from", fromDate);
+          available.put("to", toDate);
+          availabilities.add(available);
+        }
+        appli.put("name", applicant.name());
+        appli.put("surname", applicant.surname());
+        appli.put("status", applicant.status());
+        appli.put("availabilities", availabilities);
+        applicantsList.add(appli);
+      }
+      json.put("applicants", applicantsList);// this does not work
+      
       System.out.println(json);
 
       res.status(200);
