@@ -32,7 +32,7 @@ public class PasswordHash {
    * @param salt     the salt as a byte array
    * @return password hash on $salt$password form, each base64 encoded
    */
-  public static String hashPassword(String password, byte[] salt) {
+  private static String hashPassword(String password, byte[] salt) {
     Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
         .withVersion(Argon2Parameters.ARGON2_VERSION_13)
         .withIterations(t)

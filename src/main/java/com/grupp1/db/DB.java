@@ -55,10 +55,9 @@ public class DB {
   public static UserDTO getUserByUsernameOrEmail(String username, String email)
       throws NoSuchUserException, DBException {
     Validation.validateGetUserByUsernameOrEmail(username, email);
-    if (username.length() == 0) {
+    if (username == null || username.isEmpty()) {
       username = "";
-    }
-    if (username.length() > 0 || email.length() == 0) {
+    } else {
       email = "";
     }
     if (username.length() + email.length() == 0) {
@@ -176,18 +175,8 @@ public class DB {
 
   }
 
-  /*
-  private record PrivateAvailability(
-      int person_id,
-      String from,
-      String to
-  ) {
-
-  }
-
-   */
-
   public static List<ApplicantDTO> applicants() throws DBException {
+    Validation.validateApplicants();
     String query_availability = "SELECT * FROM availability ORDER BY person_id";
 
     String query_person = "SELECT p.person_id, p.name, p.surname, a.status from person p JOIN application a ON p.person_id = a.person_id";
@@ -236,6 +225,114 @@ public class DB {
       }
       log.error("SQLException: " + e.getMessage());
       throw new DBException(e);
+    }
+  }
+
+  public static long getPasswordResetLinkExpiratonTime(String resetLink)
+      throws DBException, NoSuchUserException {
+    Validation.validateGetPasswordResetlinkExpirationdate(resetLink);
+    String query = "SELECT expiration_time FROM reset_link WHERE reset_link = ?";
+
+    Connection conn = getConn();
+    try {
+      conn.setAutoCommit(false);
+      PreparedStatement stmt = conn.prepareStatement(query);
+      stmt.setString(1, resetLink);
+
+      ResultSet res = stmt.executeQuery();
+      if (!res.next()) {
+        conn.rollback();
+        log.info("Requested password reset link not found in DB");
+        throw new NoSuchUserException("No such reset link");
+      }
+
+      Timestamp time = res.getTimestamp("expiration_time");
+
+      conn.commit();
+      conn.close();
+
+      return time.getTime();
+
+    } catch (SQLException e) {
+      try {
+        conn.rollback();
+        conn.close();
+      } catch (SQLException ex) {
+        log.error("SQLException" + ex.getMessage());
+        throw new DBException(ex);
+      }
+      log.error("SQLException" + e.getMessage());
+      throw new DBException(e);
+    }
+  }
+
+  public static void createPasswordResetLink(String email, String resetlink, Long timestamp)
+      throws DBException {
+    Validation.validateCreatePasswordResetlink(email, resetlink, timestamp);
+    String deleteQuery = "DELETE FROM reset_link WHERE person_id = (SELECT person_id FROM person WHERE email = ?)";
+    String query =
+        "INSERT INTO reset_link (person_id, reset_link, expiration_time) VALUES ((SELECT person_id FROM person WHERE email = ?), ?, ?)";
+
+    Connection conn = getConn();
+    try {
+      conn.setAutoCommit(false);
+      PreparedStatement delStmt = conn.prepareStatement(deleteQuery);
+      delStmt.setString(1, email);
+      boolean b = delStmt.execute();
+
+      PreparedStatement stmt = conn.prepareStatement(query);
+      stmt.setString(1, email);
+      stmt.setString(2, resetlink);
+      stmt.setTimestamp(3, new Timestamp(timestamp));
+      boolean k = stmt.execute();
+      conn.commit();
+      conn.close();
+
+    } catch (SQLException e) {
+      try {
+        conn.rollback();
+        conn.close();
+      } catch (SQLException ex) {
+        log.error("SQLException" + ex.getMessage());
+        throw new DBException(ex);
+      }
+      log.error("SQLException" + e.getMessage());
+      throw new DBException(e);
+    }
+  }
+
+  public static void setUserPasswordByResetLink(String resetLink, String passwordHash)
+      throws DBException {
+    Validation.validateSetUserPasswordByResetlink(resetLink, passwordHash);
+    String query = "UPDATE person SET password = ? WHERE person_id = (SELECT person_id FROM reset_link WHERE reset_link = ?)";
+    String deleteQuery = "DELETE FROM reset_link WHERE reset_link = ?";
+
+    Connection conn = getConn();
+    try {
+      conn.setAutoCommit(false);
+      PreparedStatement stmt = conn.prepareStatement(query);
+      stmt.setString(1, passwordHash);
+      stmt.setString(2, resetLink);
+      stmt.execute();
+
+      PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery);
+      deleteStmt.setString(1, resetLink);
+      deleteStmt.execute();
+
+      conn.commit();
+      conn.close();
+
+    } catch (SQLException e) {
+      try {
+        conn.rollback();
+        conn.close();
+      } catch (SQLException ex) {
+        log.error("SQLException" + ex.getMessage());
+        throw new DBException(ex);
+      }
+      log.error("SQLException" + e.getMessage());
+      throw new DBException(e);
+
     }
   }
 }

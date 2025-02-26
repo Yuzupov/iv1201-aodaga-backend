@@ -42,10 +42,16 @@ public class API {
   private void setUpEndpoints() {
     //Spark.get("/hello/:name", this::hello);
     Spark.post("/login", this::login);
-    Spark.options("/login", this::test);
+    Spark.options("/login", this::options);
     Spark.post("/register", this::register);
     Spark.post("/applicants", this::applicants);
-    Spark.options("/register", this::test);
+    Spark.options("/register", this::options);
+    Spark.post("/password-reset/validate-link", this::passwordResetValidatelink);
+    Spark.post("/password-reset/create-link", this::passwordResetCreateLink);
+    Spark.post("/password-reset", this::passwordReset);
+    Spark.options("/password-reset", this::options);
+    Spark.options("/password-reset/validate-link", this::options);
+    Spark.options("/password-reset/create-link", this::options);
   }
 
   private static void enableCORS(final String origin, final String methods, final String headers) {
@@ -59,12 +65,12 @@ public class API {
     });
   }
 
-  String test(Request req, Response res) {
+  private String options(Request req, Response res) {
     logRequest(req);
     return "";
   }
 
-  String login(Request req, Response res) {
+  private String login(Request req, Response res) {
     logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
@@ -110,7 +116,7 @@ public class API {
     }
   }
 
-  String register(Request req, Response res) {
+  private String register(Request req, Response res) {
     logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
@@ -137,11 +143,10 @@ public class API {
     }
   }
 
-  String applicants(Request req, Response res) {
+  private String applicants(Request req, Response res) {
     logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
-      Validation.validateEncrypted(cryptJson);
       JSONObject json = Crypt.decryptJson(cryptJson);
 
       Validation.validateApplicants(json);
@@ -161,6 +166,98 @@ public class API {
     } catch (IllegalRoleException e) {
       res.status(403);
       return "Forbidden:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
+
+    }
+  }
+
+  //{String link, String newPassword}
+  private String passwordReset(Request req, Response res) {
+    logRequest(req);
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      JSONObject json = Crypt.decryptJson(cryptJson);
+
+      Validation.validatePasswordReset(json);
+
+      Controller.resetPasswordWithLink(json.getString("link"), json.getString("password"));
+
+      res.status(200);
+      return "if you gaze long into an abyss, the abyss will also gaze into you.";
+      // TODO Must fix catches
+    } catch (ValidationException | NoSuchUserException |
+             BadApiInputException e) { //| NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (BadCryptException e) {
+      res.status(400);
+      return "Crypt error:\n" + e.getMessage() + "\r\n\r\n"; //TODO crypt error string change
+    /*} catch (IllegalRoleException e) {
+      res.status(403);
+      return "Forbidden:\n" + e.getMessage() + "\r\n\r\n";
+
+     */
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
+    }
+  }
+
+  //{String username, String email}
+  private String passwordResetCreateLink(Request req, Response res) {
+    logRequest(req);
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      JSONObject json = Crypt.decryptJson(cryptJson);
+
+      Validation.validatePasswordResetCreatelink(json);
+
+      Controller.createPasswordResetLink(json.getString("email"));
+
+      res.status(200);
+      JSONObject responseJson = new JSONObject();
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
+
+      // TODO Must fix catches
+    } catch (ValidationException e) { //| NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (BadCryptException e) {
+      res.status(400);
+      return "Crypt error:\n" + e.getMessage() + "\r\n\r\n"; //TODO crypt error string change
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
+    }
+  }
+
+  //{String link}
+  private String passwordResetValidatelink(Request req, Response res) {
+    logRequest(req);
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      JSONObject json = Crypt.decryptJson(cryptJson);
+
+      Validation.validatePasswordResetValidateLink(json);
+
+      Controller.validatePasswordResetLink(json.getString("link"));
+
+      res.status(200);
+      JSONObject responseJson = new JSONObject();
+      responseJson.put("valid", true);
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
+
+      // TODO Must fix catches
+    } catch (APIException | NoSuchUserException e) { //| NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    /*} catch (IllegalRoleException e) {
+      res.status(403);
+      return "Forbidden:\n" + e.getMessage() + "\r\n\r\n";*/
     } catch (ServerException e) {
       res.status(500);
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";

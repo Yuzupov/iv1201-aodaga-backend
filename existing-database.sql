@@ -23,19 +23,41 @@ SET default_table_access_method = heap;
 --
 -- Name: availability; Type: TABLE; Schema: public; Owner: postgres
 --
+DROP TABLE public.reset_link;
+DROP TABLE public.application;
 DROP TABLE public.availability;
-DROP TABLE public.competence;
 DROP TABLE public.competence_profile;
+DROP TABLE public.competence;
 DROP TABLE public.person;
 DROP TABLE public.role;
-DROP TABLE public.application;
+
+CREATE TABLE public.reset_link (
+	reset_link_id integer NOT null,
+	person_id integer NOT null,
+	reset_link character varying(255),
+	expiration_time timestamp
+
+);
+
+ALTER TABLE public.reset_link OWNER TO aodaga;
+
+ALTER TABLE public.reset_link ALTER COLUMN reset_link_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.reset_link_reset_link_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 CREATE TABLE public.application (
 	application_id integer NOT null,
 	person_id integer NOT null,
 	status character varying(255)
 );
-ALTER TABLE public.competence OWNER TO aodaga;
+
+ALTER TABLE public.application OWNER TO aodaga;
 
 ALTER TABLE public.application ALTER COLUMN application_id ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.application_application_id_seq
@@ -78,8 +100,6 @@ ALTER TABLE public.availability ALTER COLUMN availability_id ADD GENERATED ALWAY
 --
 -- Name: competence; Type: TABLE; Schema: public; Owner: postgres
 --
-DROP TABLE public.competence;
-
 CREATE TABLE public.competence (
     competence_id integer NOT NULL,
     name character varying(255)
@@ -105,8 +125,6 @@ ALTER TABLE public.competence ALTER COLUMN competence_id ADD GENERATED ALWAYS AS
 --
 -- Name: competence_profile; Type: TABLE; Schema: public; Owner: postgres
 --
-DROP TABLE public.competence_profile;
-
 CREATE TABLE public.competence_profile (
     competence_profile_id integer NOT NULL,
     person_id integer,
@@ -146,7 +164,7 @@ CREATE TABLE public.person (
     username character varying(255)
 );
 
-
+ 
 ALTER TABLE public.person OWNER TO aodaga;
 
 --
@@ -5821,5 +5839,8 @@ COPY public.application (application_id, person_id, status) FROM stdin;
 
 ALTER TABLE ONLY public.application
     ADD CONSTRAINT application_person_id_fkey FOREIGN KEY (person_id) REFERENCES public.person(person_id);
+
+ALTER TABLE ONLY public.reset_link
+    ADD CONSTRAINT reset_link_person_id_fkey FOREIGN KEY (person_id) REFERENCES public.person(person_id);
 
 GRANT SELECT, UPDATE, INSERT, DELETE ON ALL TABLES IN SCHEMA public to aodaga;

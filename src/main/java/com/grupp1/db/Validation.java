@@ -1,7 +1,7 @@
 package com.grupp1.db;
 
 import com.grupp1.controller.Controller;
-import com.grupp1.controller.UserDTO;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +19,11 @@ public class Validation {
    */
   static void validateGetUserByUsernameOrEmail(String username, String email)
       throws DBValidationException {
-    validateUsername(username);
-    validateEmail(email);
+    if (username == null || username.isEmpty()) {
+      validateEmail(email);
+    } else {
+      validateUsername(username);
+    }
   }
 
   /**
@@ -42,6 +45,55 @@ public class Validation {
     validatePersonalNumber(pnr);
     validatePasswordHash(passwordHash);
   }
+
+  /**
+   * Validation for input to the applicants function in DB. throws error if validation fails
+   */
+  public static void validateApplicants() {
+  }
+
+  /**
+   * Validation for input to the passwordResetlinkExpirationdate function in DB. throws error if
+   * validation fails
+   *
+   * @param resetLink
+   */
+  public static void validateGetPasswordResetlinkExpirationdate(String resetLink) {
+    validateResetLink(resetLink);
+  }
+
+  /**
+   * Validation for input to the createPasswordResetLink function in DB. throws error if validation
+   * fails
+   *
+   * @param email
+   * @param resetlink
+   * @param timestamp
+   */
+  public static void validateCreatePasswordResetlink(String email, String resetlink,
+      Long timestamp) {
+    validateEmail(email);
+    validateResetLink(resetlink);
+    if (Instant.now().isAfter(Instant.ofEpochMilli(timestamp))) {
+      log.error("Timestamp is already outdated");
+      throw new DBValidationException("Timestamp is already outdated");
+    }
+
+  }
+
+  /**
+   * Validation for input to the setUserPasswordByResetLink function in DB. throws error if
+   * validation fails
+   *
+   * @param resetLink
+   * @param passwordHash
+   */
+  public static void validateSetUserPasswordByResetlink(String resetLink, String passwordHash) {
+    validateResetLink(resetLink);
+    validatePasswordHash(passwordHash);
+  }
+
+//private functions
 
   private static void validatePasswordHash(String passwordHash) throws DBValidationException {
     if (!passwordHash.matches("^\\$[\\p{L}\\d\\/]{22}==\\$[\\p{L}\\d\\/]{43}=$")) {
@@ -84,5 +136,14 @@ public class Validation {
     }
   }
 
-
+  private static void validateResetLink(String resetLink)
+      throws DBValidationException {
+    try {
+      com.grupp1.utils.Validation.validateResetLink(resetLink);
+    } catch (IllegalArgumentException e) {
+      log.error(
+          "Validation not passed: Invalid resetLink format.");
+      throw new DBValidationException("Invalid resetLink format");
+    }
+  }
 }

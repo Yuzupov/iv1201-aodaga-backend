@@ -39,7 +39,7 @@ class Tokenizer {
   static TokenData extreactToken(String token) throws ValidationException, BadCryptException {
     String decryptedToken = Crypt.decryptRSA(token);
     Validation.validateToken(decryptedToken);
-    byte[] tokenBytes = Base64.getDecoder().decode(token);
+    byte[] tokenBytes = Base64.getDecoder().decode(decryptedToken);
     String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
     JSONObject json = new JSONObject(jsonString);
     return new TokenData(token, json.getString("username"), json.getLong("expiration"));

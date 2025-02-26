@@ -182,7 +182,7 @@ class Validation {
    * contains the correct fields Check that token is not expired throws exceptions in case something
    * is wrong.
    *
-   * @param token
+   * @param token Base64 encoded token
    * @throws ValidationException
    */
   static void validateToken(String token) throws ValidationException {
@@ -192,6 +192,7 @@ class Validation {
       byte[] tokenBytes = Base64.getDecoder().decode(token);
       String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
       json = new JSONObject(jsonString);
+      System.out.println("invalidation: " + json);
     } catch (JSONException e) {
       e.printStackTrace();
       throw new ValidationException("Token not valid" + e);
@@ -212,6 +213,89 @@ class Validation {
     } catch (JSONException e) {
       e.printStackTrace();
       throw new ValidationException("missing " + field + "field");
+    }
+  }
+
+
+  /**
+   * Checks wether a json object conforms to the requirements for the paswordReset/validatelink
+   * endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
+  public static void validatePasswordResetValidateLink(JSONObject json) throws ValidationException {
+    String field = "link";
+    try {
+      String fieldVal = json.getString(field);
+      validateResetLink(fieldVal, field);
+    } catch (JSONException e) {
+      log.info("Validation not passed: Missing '" + field + "'");
+      throw new ValidationException("missing " + field + "field");
+    }
+  }
+
+
+  /**
+   * Checks wether a json object conforms to the requirements for the resetPassword/createlink
+   * endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
+  public static void validatePasswordResetCreatelink(JSONObject json) throws ValidationException {
+    String field = "email";
+    try {
+      String fieldVal = json.getString(field);
+      validateEmail(fieldVal, field);
+    } catch (JSONException e) {
+      log.info("Validation not passed: Missing '" + field + "'");
+      throw new ValidationException("missing " + field + "field");
+    }
+  }
+
+
+  /**
+   * Checks wether a json object conforms to the requirements for the resetPassword endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
+  public static void validatePasswordReset(JSONObject json) throws ValidationException {
+    String[] expectedFields = {"link", "password"};
+    String field = "";
+    try {
+      for (String f : expectedFields) {
+        field = f;
+        String fieldVal = json.getString(field);
+
+        if (field.equals("link")) {
+          validateResetLink(fieldVal, field);
+        } else if (field.equals("password")) {
+          validateString(fieldVal, field);
+        }
+      }
+    } catch (JSONException e) {
+      log.info("Validation not passed: Missing '" + field + "'");
+      throw new ValidationException("missing " + field + "field");
+    }
+  }
+
+  private static void validateString(String string, String fieldName)
+      throws ValidationException {
+    if (string == null || string.isEmpty()) {
+      log.info("Validation not passed: Invalid '" + fieldName + "' format");
+      throw new ValidationException("Invalid '" + fieldName + "' format");
+    }
+  }
+
+  private static void validateResetLink(String resetLink, String fieldName)
+      throws ValidationException {
+    try {
+      com.grupp1.utils.Validation.validateResetLink(resetLink);
+    } catch (IllegalArgumentException e) {
+      log.info("Validation not passed: Invalid '" + fieldName + "' format");
+      throw new ValidationException("Invalid '" + fieldName + "' format");
     }
   }
 
@@ -243,4 +327,5 @@ class Validation {
       throw new ValidationException("Invalid '" + fieldName + "' format");
     }
   }
+
 }

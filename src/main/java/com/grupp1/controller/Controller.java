@@ -9,6 +9,12 @@ import com.grupp1.api.ServerException;
 import com.grupp1.db.DBException;
 import com.grupp1.db.NoSuchUserException;
 import com.grupp1.db.UserExistsException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +44,70 @@ public class Controller {
 
       testPassword(password, user.password());
       return user;
+
+    } catch (DBException e) {
+      throw new ServerException("database error");
+    }
+  }
+
+  public static void resetPasswordWithLink(String resetLink, String password)
+      throws BadApiInputException, ServerException, NoSuchUserException {
+    String passwordHash = PasswordHash.hashPassword(password);
+    validatePasswordResetLink(resetLink);
+    try {
+      DB.setUserPasswordByResetLink(resetLink, passwordHash);
+    } catch (DBException e) {
+      throw new ServerException("database error");
+    }
+
+  }
+
+  public static void validatePasswordResetLink(String resetLink)
+      throws NoSuchUserException, ServerException, BadApiInputException {
+    long timestamp;
+    try {
+      timestamp = DB.getPasswordResetLinkExpiratonTime(resetLink);
+    } catch (DBException e) {
+      throw new ServerException("database error");
+    }
+
+    Instant linkExpirationTime = Instant.ofEpochMilli(timestamp);
+    if (Instant.now().isAfter(linkExpirationTime)) {
+      log.info("Provided password reset link is expired");
+      throw new BadApiInputException("Link has expired");
+    }
+    return;
+  }
+
+  /**
+   * create a password reset link and email the user {dummy, prints to out}
+   *
+   * @param email
+   * @throws ServerException
+   */
+
+  public static void createPasswordResetLink(String email) throws ServerException {
+    byte[] rndBytes = new byte[32];
+    try {
+      SecureRandom.getInstanceStrong().nextBytes(rndBytes);
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+    StringBuilder rndLink = new StringBuilder();
+    String charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    for (byte b : rndBytes) {
+      rndLink.append(charset.charAt((b + 128) % charset.length()));
+    }
+    String resetlink = rndLink.toString();
+    Long timestamp = Instant.now().plusSeconds(600).getEpochSecond() * 1000;
+
+    try {
+      DB.createPasswordResetLink(email, resetlink, timestamp);
+
+      System.out.println("This is an email");
+      System.out.println(
+          "https://recruitment-application-fronte-593587373fd5.herokuapp.com/reset/" + resetlink);
+      System.out.println("Sincerely, aodagaAdmin");
 
     } catch (DBException e) {
       throw new ServerException("database error");
