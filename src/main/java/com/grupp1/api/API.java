@@ -1,12 +1,15 @@
 package com.grupp1.api;
 
 import com.grupp1.api.Tokenizer.TokenData;
+import com.grupp1.controller.ApplicantDTO;
+import com.grupp1.controller.Availability;
 import com.grupp1.controller.Controller;
-
 import com.grupp1.controller.IllegalRoleException;
 import com.grupp1.controller.PasswordException;
 import com.grupp1.controller.UserDTO;
 import com.grupp1.db.NoSuchUserException;
+import java.util.ArrayList;
+import java.util.List;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +48,7 @@ public class API {
     Spark.options("/login", this::options);
     Spark.post("/register", this::register);
     Spark.post("/applicants", this::applicants);
+    Spark.options("/applicants", this::options);
     Spark.options("/register", this::options);
     Spark.post("/password-reset/validate-link", this::passwordResetValidatelink);
     Spark.post("/password-reset/create-link", this::passwordResetCreateLink);
@@ -73,6 +77,13 @@ public class API {
   private String login(Request req, Response res) {
     logRequest(req);
     try {
+      //testcode
+      /*
+      JSONObject json = Json.parseJson(req.body());
+      json.put("symmetricKey",
+          Crypt.decryptRSA(
+              "sG6xj4VkLWVOHBwJDSVyi5AWqT3ix6w2/2TQj8pU95Rc/RBqgaPVtp2WiRMMEL/FpurXpv/Y6g3jyT5mdx6KLcxI0jmqQsFkic96s9y6kaKxSoTCGrTrOwMixLjm9dkHmYEzdkGjrPh38a3XymeFOVoyLK07YuvMU3uJ8CdgRzw="));
+      */
       JSONObject cryptJson = Json.parseJson(req.body());
       JSONObject json = Crypt.decryptJson(cryptJson);
 
@@ -151,11 +162,38 @@ public class API {
 
       Validation.validateApplicants(json);
       String token = json.getString("token");
-      TokenData tokenData = Tokenizer.extreactToken(token);
-      Controller.applicants(tokenData.username());
+      TokenData tokenData = Tokenizer.extractToken(token);
+      List<ApplicantDTO> applicants = Controller.applicants(tokenData.username());
+
+      //applicants is a list of applicantDTOs
+      //applicant DTO innehåller strängar och en lista av availabilitys
+      // en availability innehåller en to och en from sträng
+
+      List<JSONObject> applicantsList = new ArrayList<>();
+      for (ApplicantDTO applicant : applicants) {
+        JSONObject appli = new JSONObject();
+        List<JSONObject> availabilities = new ArrayList<>();
+        for (Availability date : applicant.availabilities()) {
+          JSONObject available = new JSONObject();
+          String fromDate = date.from();
+          String toDate = date.to();
+          available.put("from", fromDate);
+          available.put("to", toDate);
+          availabilities.add(available);
+        }
+        appli.put("name", applicant.name());
+        appli.put("surname", applicant.surname());
+        appli.put("status", applicant.status());
+        appli.put("availabilities", availabilities);
+        applicantsList.add(appli);
+      }
+      json.put("applicants", applicantsList);// this does not work
+
+      System.out.println(json);
 
       res.status(200);
-      return "if you gaze long into an abyss, the abyss will also gaze into you.";
+      return Crypt.encryptJson(json, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
       // TODO Must fix catches
     } catch (ValidationException | NoSuchUserException e) {
       res.status(400);
@@ -171,6 +209,8 @@ public class API {
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
 
     }
+
+
   }
 
   //{String link, String newPassword}
