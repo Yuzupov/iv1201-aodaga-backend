@@ -96,7 +96,7 @@ public class Validation {
 //private functions
 
   private static void validatePasswordHash(String passwordHash) throws DBValidationException {
-    if (!passwordHash.matches("^\\$[\\p{L}\\d\\/]{22}==\\$[\\p{L}\\d\\/]{43}=$")) {
+    if (!passwordHash.matches("^\\$[\\p{L}\\d\\/+]{22}==\\$[\\p{L}\\d\\/+]{43}=$")) {
       log.error("Validation not passed: Invalid password hash format.");
       throw new DBValidationException(
           "Validation not passed: Invalid password hash format");
