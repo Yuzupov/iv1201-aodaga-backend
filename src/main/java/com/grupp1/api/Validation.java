@@ -278,6 +278,13 @@ class Validation {
     }
   }
 
+  /**
+   * Validation fo the dummy endpoint. Checks that json contains the correct fields and that
+   * password is a valid format
+   *
+   * @param json
+   * @throws ValidationException
+   */
   public static void validateUpdate(JSONObject json) throws ValidationException {
     String field = "";
     try {
