@@ -278,6 +278,20 @@ class Validation {
     }
   }
 
+  public static void validateUpdate(JSONObject json) throws ValidationException {
+    String field = "";
+    try {
+      field = "token";
+      json.getString(field);
+      field = "password";
+      String password = json.getString(field);
+      validateString(password, field);
+    } catch (JSONException e) {
+      log.info("missing field: " + field);
+      throw new ValidationException("missing field: " + field);
+    }
+  }
+
   private static void validateString(String string, String fieldName)
       throws ValidationException {
     if (string == null || string.isEmpty()) {
@@ -324,5 +338,4 @@ class Validation {
       throw new ValidationException("Invalid '" + fieldName + "' format");
     }
   }
-
 }

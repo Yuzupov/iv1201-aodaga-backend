@@ -172,4 +172,15 @@ public class Controller {
       throw new ServerException("Database Error");
     }
   }
+
+  public static void update(String username, String password)
+      throws PasswordException, NoSuchUserException, ServerException {
+    try {
+      UserDTO user = DB.getUserByUsernameOrEmail(username, "");
+      PasswordHash.testPassword(password, user.password());
+    } catch (DBException e) {
+      log.error("Database Error: " + e);
+      throw new ServerException("Database Error");
+    }
+  }
 }
