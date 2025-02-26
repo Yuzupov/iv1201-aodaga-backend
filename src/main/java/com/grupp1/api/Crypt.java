@@ -94,8 +94,11 @@ class Crypt {
     String timestamp = json.getString("timestamp");
     String decryptedJsonString = decryptAES(crypt, iv, key);
     JSONObject decryptedJson = Json.parseJson(decryptedJsonString);
+
+    log.debug("decrypted json: " + decryptedJson);
     decryptedJson.put("symmetricKey", key);
     decryptedJson.put("timestamp", timestamp);
+
     return decryptedJson;
   }
 

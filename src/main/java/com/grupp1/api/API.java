@@ -38,7 +38,7 @@ public class API {
           "POST, OPTIONS",
           "content-type");
     } else {
-      enableCORS("http://localhost:5173", "POST, OPTIONS", "content-type");
+      enableCORS("*", "POST, OPTIONS", "content-type");
     }
   }
 
@@ -106,9 +106,7 @@ public class API {
       responseJson.put("userEmail", user.email());
       responseJson.put("expirationDate", tokenObj.expirationDate());
 
-      System.out.println("test");
-      System.out.println(responseJson.toString());
-
+      log.debug("response: " + responseJson);
       return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
           json.getString("timestamp")).toString();
 
@@ -142,6 +140,8 @@ public class API {
       String userName = json.getString("username");
       Controller.register(firstName, lastName, personalNumber, email, userPassword, userName);
       JSONObject responseJson = new JSONObject();
+
+      log.debug("response: " + responseJson);
       return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
           json.getString("timestamp")).toString();
 
@@ -189,8 +189,6 @@ public class API {
       }
       json.put("applicants", applicantsList);// this does not work
 
-      System.out.println(json);
-
       res.status(200);
       return Crypt.encryptJson(json, json.getString("symmetricKey"),
           json.getString("timestamp")).toString();
@@ -225,7 +223,11 @@ public class API {
       Controller.resetPasswordWithLink(json.getString("link"), json.getString("password"));
 
       res.status(200);
-      return "if you gaze long into an abyss, the abyss will also gaze into you.";
+
+      JSONObject responseJson = new JSONObject();
+      log.debug("response: " + responseJson);
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
       // TODO Must fix catches
     } catch (ValidationException | NoSuchUserException |
              BadApiInputException e) { //| NoSuchUserException e) {
@@ -258,6 +260,8 @@ public class API {
 
       res.status(200);
       JSONObject responseJson = new JSONObject();
+
+      log.debug("response: " + responseJson);
       return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
           json.getString("timestamp")).toString();
 
@@ -288,6 +292,7 @@ public class API {
       res.status(200);
       JSONObject responseJson = new JSONObject();
       responseJson.put("valid", true);
+      log.debug("response: " + responseJson);
       return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
           json.getString("timestamp")).toString();
 
@@ -306,7 +311,7 @@ public class API {
   }
 
   private void logRequest(Request req) {
-    log.info("API call: " + req.pathInfo());
+    log.info("API call: " + req.requestMethod() + " " + req.pathInfo());
     StringBuilder s = new StringBuilder();
     for (String h : req.headers()) {
       s.append('[').append(h).append(":");
