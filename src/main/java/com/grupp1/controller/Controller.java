@@ -173,6 +173,15 @@ public class Controller {
     }
   }
 
+  /**
+   * Dummy endpoint method
+   *
+   * @param username
+   * @param password
+   * @throws PasswordException
+   * @throws NoSuchUserException
+   * @throws ServerException
+   */
   public static void update(String username, String password)
       throws PasswordException, NoSuchUserException, ServerException {
     try {

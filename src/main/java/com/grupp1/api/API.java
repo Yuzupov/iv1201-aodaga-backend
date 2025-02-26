@@ -189,6 +189,7 @@ public class API {
       responseJson.put("applicants", applicantsList);// this does not work
 
       res.status(200);
+      log.debug("response: " + responseJson);
       return Crypt.encryptJson(responseJson, requestJson.getString("symmetricKey"),
           requestJson.getString("timestamp")).toString();
       // TODO Must fix catches
@@ -299,7 +300,7 @@ public class API {
     }
   }
 
-  String update(Request req, Response res) {
+  private String update(Request req, Response res) {
     logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
@@ -313,7 +314,7 @@ public class API {
 
       res.status(200);
       JSONObject responseJson = new JSONObject();
-
+      log.debug("response: " + responseJson);
       return Crypt.encryptJson(responseJson, requestJson.getString("symmetricKey"),
           requestJson.getString("timestamp")).toString();
 
