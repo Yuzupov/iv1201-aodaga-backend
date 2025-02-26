@@ -289,10 +289,9 @@ class Validation {
     String field = "";
     try {
       field = "token";
-      json.getString(field);
+      validateToken(json.getString(field));
       field = "password";
-      String password = json.getString(field);
-      validateString(password, field);
+      validateString(json.getString(field), field);
     } catch (JSONException e) {
       log.info("missing field: " + field);
       throw new ValidationException("missing field: " + field);
