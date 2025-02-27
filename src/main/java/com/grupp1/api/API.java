@@ -79,13 +79,6 @@ public class API {
   private String login(Request req, Response res) {
     logRequest(req);
     try {
-      //testcode
-      /*
-      JSONObject json = Json.parseJson(req.body());
-      json.put("symmetricKey",
-          Crypt.decryptRSA(
-              "sG6xj4VkLWVOHBwJDSVyi5AWqT3ix6w2/2TQj8pU95Rc/RBqgaPVtp2WiRMMEL/FpurXpv/Y6g3jyT5mdx6KLcxI0jmqQsFkic96s9y6kaKxSoTCGrTrOwMixLjm9dkHmYEzdkGjrPh38a3XymeFOVoyLK07YuvMU3uJ8CdgRzw="));
-      */
       JSONObject cryptJson = Json.parseJson(req.body());
       JSONObject json = Crypt.decryptJson(cryptJson);
 
@@ -106,6 +99,7 @@ public class API {
       responseJson.put("token", tokenObj.token());
       responseJson.put("username", user.username());
       responseJson.put("userEmail", user.email());
+      responseJson.put("role", user.role());
       responseJson.put("expirationDate", tokenObj.expirationDate());
 
       log.debug("response: " + responseJson);
