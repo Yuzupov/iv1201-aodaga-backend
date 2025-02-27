@@ -47,9 +47,11 @@ public class API {
     Spark.post("/login", this::login);
     Spark.options("/login", this::options);
     Spark.post("/register", this::register);
+    Spark.options("/register", this::options);
     Spark.post("/applicants", this::applicants);
     Spark.options("/applicants", this::options);
-    Spark.options("/register", this::options);
+    Spark.post("/applicant/update", this::update);
+    Spark.options("/applicant/update", this::options);
     Spark.post("/password-reset/validate-link", this::passwordResetValidatelink);
     Spark.post("/password-reset/create-link", this::passwordResetCreateLink);
     Spark.post("/password-reset", this::passwordReset);
@@ -158,16 +160,12 @@ public class API {
     logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
-      JSONObject json = Crypt.decryptJson(cryptJson);
+      JSONObject requestJson = Crypt.decryptJson(cryptJson);
 
-      Validation.validateApplicants(json);
-      String token = json.getString("token");
+      Validation.validateApplicants(requestJson);
+      String token = requestJson.getString("token");
       TokenData tokenData = Tokenizer.extractToken(token);
       List<ApplicantDTO> applicants = Controller.applicants(tokenData.username());
-
-      //applicants is a list of applicantDTOs
-      //applicant DTO innehåller strängar och en lista av availabilitys
-      // en availability innehåller en to och en from sträng
 
       List<JSONObject> applicantsList = new ArrayList<>();
       for (ApplicantDTO applicant : applicants) {
@@ -187,11 +185,13 @@ public class API {
         appli.put("availabilities", availabilities);
         applicantsList.add(appli);
       }
-      json.put("applicants", applicantsList);// this does not work
+      JSONObject responseJson = new JSONObject();
+      responseJson.put("applicants", applicantsList);// this does not work
 
       res.status(200);
-      return Crypt.encryptJson(json, json.getString("symmetricKey"),
-          json.getString("timestamp")).toString();
+      log.debug("response: " + responseJson);
+      return Crypt.encryptJson(responseJson, requestJson.getString("symmetricKey"),
+          requestJson.getString("timestamp")).toString();
       // TODO Must fix catches
     } catch (ValidationException | NoSuchUserException e) {
       res.status(400);
@@ -205,10 +205,7 @@ public class API {
     } catch (ServerException e) {
       res.status(500);
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
-
     }
-
-
   }
 
   //{String link, String newPassword}
@@ -307,6 +304,42 @@ public class API {
       res.status(500);
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
 
+    }
+  }
+
+  private String update(Request req, Response res) {
+    logRequest(req);
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      JSONObject requestJson = Crypt.decryptJson(cryptJson);
+
+      Validation.validateUpdate(requestJson);
+      String token = requestJson.getString("token");
+      TokenData tokenData = Tokenizer.extractToken(token);
+
+      Controller.update(tokenData.username(), requestJson.getString("password"));
+
+      res.status(200);
+      JSONObject responseJson = new JSONObject();
+      log.debug("response: " + responseJson);
+      return Crypt.encryptJson(responseJson, requestJson.getString("symmetricKey"),
+          requestJson.getString("timestamp")).toString();
+
+    } catch (PasswordException e) {
+      res.status(403);
+      return "Bad password: \n" + e.getMessage() + "\r\n\r\n";
+    } catch (NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (ValidationException e) { //| NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (BadCryptException e) {
+      res.status(400);
+      return "Crypt error:\n" + e.getMessage() + "\r\n\r\n"; //TODO crypt error string change
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
     }
   }
 

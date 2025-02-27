@@ -278,6 +278,26 @@ class Validation {
     }
   }
 
+  /**
+   * Validation fo the dummy endpoint. Checks that json contains the correct fields and that
+   * password is a valid format
+   *
+   * @param json
+   * @throws ValidationException
+   */
+  public static void validateUpdate(JSONObject json) throws ValidationException {
+    String field = "";
+    try {
+      field = "token";
+      validateToken(json.getString(field));
+      field = "password";
+      validateString(json.getString(field), field);
+    } catch (JSONException e) {
+      log.info("missing field: " + field);
+      throw new ValidationException("missing field: " + field);
+    }
+  }
+
   private static void validateString(String string, String fieldName)
       throws ValidationException {
     if (string == null || string.isEmpty()) {
@@ -324,5 +344,4 @@ class Validation {
       throw new ValidationException("Invalid '" + fieldName + "' format");
     }
   }
-
 }
