@@ -127,13 +127,15 @@ public class DB {
       conn.setAutoCommit(false);
 
       PreparedStatement checkExists = conn.prepareStatement(
-          "SELECT person_id FROM person WHERE username = ? OR email = ?");
+          "SELECT person_id FROM person WHERE username = ? OR email = ? OR pnr = ?");
       checkExists.setString(1, username);
       checkExists.setString(2, email);
+      checkExists.setString(3, pnr);
       ResultSet rrs = checkExists.executeQuery();
       if (rrs.next() && rrs.getInt(1) > 0) {
         conn.rollback();
-        log.info("no user created, username ('" + username + "') or email ('" + email
+        log.info("no user created, username ('" + username + "'), personal number ('" + pnr
+            + "') or email ('" + email
             + "') already exists");
         throw new UserExistsException("username or email already exists");
       }
