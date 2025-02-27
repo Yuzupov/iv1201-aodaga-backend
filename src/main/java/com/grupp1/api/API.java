@@ -1,13 +1,15 @@
 package com.grupp1.api;
 
 import com.grupp1.api.Tokenizer.TokenData;
+import com.grupp1.controller.ApplicantDTO;
+import com.grupp1.controller.Availability;
 import com.grupp1.controller.Controller;
-
 import com.grupp1.controller.IllegalRoleException;
 import com.grupp1.controller.PasswordException;
 import com.grupp1.controller.UserDTO;
 import com.grupp1.db.NoSuchUserException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,17 +38,26 @@ public class API {
           "POST, OPTIONS",
           "content-type");
     } else {
-      enableCORS("http://localhost:5173", "POST, OPTIONS", "content-type");
+      enableCORS("*", "POST, OPTIONS", "content-type");
     }
   }
 
   private void setUpEndpoints() {
     //Spark.get("/hello/:name", this::hello);
     Spark.post("/login", this::login);
-    Spark.options("/login", this::test);
+    Spark.options("/login", this::options);
     Spark.post("/register", this::register);
+    Spark.options("/register", this::options);
     Spark.post("/applicants", this::applicants);
-    Spark.options("/register", this::test);
+    Spark.options("/applicants", this::options);
+    Spark.post("/applicant/update", this::update);
+    Spark.options("/applicant/update", this::options);
+    Spark.post("/password-reset/validate-link", this::passwordResetValidatelink);
+    Spark.post("/password-reset/create-link", this::passwordResetCreateLink);
+    Spark.post("/password-reset", this::passwordReset);
+    Spark.options("/password-reset", this::options);
+    Spark.options("/password-reset/validate-link", this::options);
+    Spark.options("/password-reset/create-link", this::options);
   }
 
   private static void enableCORS(final String origin, final String methods, final String headers) {
@@ -60,12 +71,12 @@ public class API {
     });
   }
 
-  String test(Request req, Response res) {
+  private String options(Request req, Response res) {
     logRequest(req);
     return "";
   }
 
-  String login(Request req, Response res) {
+  private String login(Request req, Response res) {
     logRequest(req);
     try {
       //testcode
@@ -97,9 +108,7 @@ public class API {
       responseJson.put("userEmail", user.email());
       responseJson.put("expirationDate", tokenObj.expirationDate());
 
-      System.out.println("test");
-      System.out.println(responseJson.toString());
-
+      log.debug("response: " + responseJson);
       return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
           json.getString("timestamp")).toString();
 
@@ -118,7 +127,7 @@ public class API {
     }
   }
 
-  String register(Request req, Response res) {
+  private String register(Request req, Response res) {
     logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
@@ -133,6 +142,8 @@ public class API {
       String userName = json.getString("username");
       Controller.register(firstName, lastName, personalNumber, email, userPassword, userName);
       JSONObject responseJson = new JSONObject();
+
+      log.debug("response: " + responseJson);
       return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
           json.getString("timestamp")).toString();
 
@@ -145,20 +156,42 @@ public class API {
     }
   }
 
-  String applicants(Request req, Response res) {
+  private String applicants(Request req, Response res) {
     logRequest(req);
     try {
       JSONObject cryptJson = Json.parseJson(req.body());
-      Validation.validateEncrypted(cryptJson);
-      JSONObject json = Crypt.decryptJson(cryptJson);
+      JSONObject requestJson = Crypt.decryptJson(cryptJson);
 
-      Validation.validateApplicants(json);
-      String token = json.getString("token");
-      TokenData tokenData = Tokenizer.extreactToken(token);
-      Controller.applicants(tokenData.username());
+      Validation.validateApplicants(requestJson);
+      String token = requestJson.getString("token");
+      TokenData tokenData = Tokenizer.extractToken(token);
+      List<ApplicantDTO> applicants = Controller.applicants(tokenData.username());
+
+      List<JSONObject> applicantsList = new ArrayList<>();
+      for (ApplicantDTO applicant : applicants) {
+        JSONObject appli = new JSONObject();
+        List<JSONObject> availabilities = new ArrayList<>();
+        for (Availability date : applicant.availabilities()) {
+          JSONObject available = new JSONObject();
+          String fromDate = date.from();
+          String toDate = date.to();
+          available.put("from", fromDate);
+          available.put("to", toDate);
+          availabilities.add(available);
+        }
+        appli.put("name", applicant.name());
+        appli.put("surname", applicant.surname());
+        appli.put("status", applicant.status());
+        appli.put("availabilities", availabilities);
+        applicantsList.add(appli);
+      }
+      JSONObject responseJson = new JSONObject();
+      responseJson.put("applicants", applicantsList);// this does not work
 
       res.status(200);
-      return "if you gaze long into an abyss, the abyss will also gaze into you.";
+      log.debug("response: " + responseJson);
+      return Crypt.encryptJson(responseJson, requestJson.getString("symmetricKey"),
+          requestJson.getString("timestamp")).toString();
       // TODO Must fix catches
     } catch (ValidationException | NoSuchUserException e) {
       res.status(400);
@@ -172,14 +205,146 @@ public class API {
     } catch (ServerException e) {
       res.status(500);
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
+    }
+  }
+
+  //{String link, String newPassword}
+  private String passwordReset(Request req, Response res) {
+    logRequest(req);
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      JSONObject json = Crypt.decryptJson(cryptJson);
+
+      Validation.validatePasswordReset(json);
+
+      Controller.resetPasswordWithLink(json.getString("link"), json.getString("password"));
+
+      res.status(200);
+
+      JSONObject responseJson = new JSONObject();
+      log.debug("response: " + responseJson);
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
+      // TODO Must fix catches
+    } catch (ValidationException | NoSuchUserException |
+             BadApiInputException e) { //| NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (BadCryptException e) {
+      res.status(400);
+      return "Crypt error:\n" + e.getMessage() + "\r\n\r\n"; //TODO crypt error string change
+    /*} catch (IllegalRoleException e) {
+      res.status(403);
+      return "Forbidden:\n" + e.getMessage() + "\r\n\r\n";
+
+     */
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
+    }
+  }
+
+  //{String username, String email}
+  private String passwordResetCreateLink(Request req, Response res) {
+    logRequest(req);
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      JSONObject json = Crypt.decryptJson(cryptJson);
+
+      Validation.validatePasswordResetCreatelink(json);
+
+      Controller.createPasswordResetLink(json.getString("email"));
+
+      res.status(200);
+      JSONObject responseJson = new JSONObject();
+
+      log.debug("response: " + responseJson);
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
+
+      // TODO Must fix catches
+    } catch (ValidationException e) { //| NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (BadCryptException e) {
+      res.status(400);
+      return "Crypt error:\n" + e.getMessage() + "\r\n\r\n"; //TODO crypt error string change
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
+    }
+  }
+
+  //{String link}
+  private String passwordResetValidatelink(Request req, Response res) {
+    logRequest(req);
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      JSONObject json = Crypt.decryptJson(cryptJson);
+
+      Validation.validatePasswordResetValidateLink(json);
+
+      Controller.validatePasswordResetLink(json.getString("link"));
+
+      res.status(200);
+      JSONObject responseJson = new JSONObject();
+      responseJson.put("valid", true);
+      log.debug("response: " + responseJson);
+      return Crypt.encryptJson(responseJson, json.getString("symmetricKey"),
+          json.getString("timestamp")).toString();
+
+      // TODO Must fix catches
+    } catch (APIException | NoSuchUserException e) { //| NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    /*} catch (IllegalRoleException e) {
+      res.status(403);
+      return "Forbidden:\n" + e.getMessage() + "\r\n\r\n";*/
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
 
     }
+  }
 
+  private String update(Request req, Response res) {
+    logRequest(req);
+    try {
+      JSONObject cryptJson = Json.parseJson(req.body());
+      JSONObject requestJson = Crypt.decryptJson(cryptJson);
 
+      Validation.validateUpdate(requestJson);
+      String token = requestJson.getString("token");
+      TokenData tokenData = Tokenizer.extractToken(token);
+
+      Controller.update(tokenData.username(), requestJson.getString("password"));
+
+      res.status(200);
+      JSONObject responseJson = new JSONObject();
+      log.debug("response: " + responseJson);
+      return Crypt.encryptJson(responseJson, requestJson.getString("symmetricKey"),
+          requestJson.getString("timestamp")).toString();
+
+    } catch (PasswordException e) {
+      res.status(403);
+      return "Bad password: \n" + e.getMessage() + "\r\n\r\n";
+    } catch (NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (ValidationException e) { //| NoSuchUserException e) {
+      res.status(400);
+      return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
+    } catch (BadCryptException e) {
+      res.status(400);
+      return "Crypt error:\n" + e.getMessage() + "\r\n\r\n"; //TODO crypt error string change
+    } catch (ServerException e) {
+      res.status(500);
+      return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
+    }
   }
 
   private void logRequest(Request req) {
-    log.info("API call: " + req.pathInfo());
+    log.info("API call: " + req.requestMethod() + " " + req.pathInfo());
     StringBuilder s = new StringBuilder();
     for (String h : req.headers()) {
       s.append('[').append(h).append(":");

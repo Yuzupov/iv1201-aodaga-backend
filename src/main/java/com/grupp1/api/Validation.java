@@ -12,23 +12,6 @@ class Validation {
 
   private static final Logger log = LoggerFactory.getLogger(Validation.class);
 
-  private static void validateUsername(String username, String fieldName)
-      throws ValidationException {
-    if (!username.matches("^[a-zA-Z0-9]*$")) {
-      throw new ValidationException("Invalid '" + fieldName + "' format");
-    }
-    if (username.length() > 80) {
-      throw new ValidationException("'" + fieldName + "' too long");
-    }
-  }
-
-  private static void validateEmail(String email, String fieldName) throws ValidationException {
-    if (!email.matches(
-        "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])"
-    )) {
-      throw new ValidationException("Invalid '" + fieldName + "' format");
-    }
-  }
 
   /**
    * Checks wether a json object conforms to the requirements for the login endpoint
@@ -92,10 +75,9 @@ class Validation {
         if (fieldVal.length() > 255) {
           throw new ValidationException("'" + field + "' too long");
         }
+        //TODO
         if (field.equals("personalNumber")) {
-          if (!fieldVal.matches("\\d{8}-\\d{4}")) {
-            throw new ValidationException("Invalid 'personalNumber' format");
-          }
+          validatePersonalNumber(fieldVal, field);
         }
         if (field.equals("email")) {
           validateEmail(fieldVal, field);
@@ -200,7 +182,7 @@ class Validation {
    * contains the correct fields Check that token is not expired throws exceptions in case something
    * is wrong.
    *
-   * @param token
+   * @param token Base64 encoded token
    * @throws ValidationException
    */
   static void validateToken(String token) throws ValidationException {
@@ -210,12 +192,9 @@ class Validation {
       byte[] tokenBytes = Base64.getDecoder().decode(token);
       String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
       json = new JSONObject(jsonString);
-    } catch (JSONException e) {
-      e.printStackTrace();
+    } catch (JSONException | IllegalArgumentException e) {
+      log.info("Not a valid token");
       throw new ValidationException("Token not valid" + e);
-    } catch (IllegalArgumentException e) {
-      e.printStackTrace();
-      throw new ValidationException("token is wrong of wrong type");
     }
 
     try {
@@ -225,11 +204,144 @@ class Validation {
       long expirationTime = json.getLong(field);
 
       if (!(expirationTime > Instant.now().getEpochSecond())) {
+        log.info("Token is expired");
         throw new ValidationException("Token is Expired");
       }
     } catch (JSONException e) {
-      e.printStackTrace();
+      log.info("missing " + field + " field");
+      throw new ValidationException("missing " + field + " field");
+    }
+  }
+
+
+  /**
+   * Checks wether a json object conforms to the requirements for the paswordReset/validatelink
+   * endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
+  public static void validatePasswordResetValidateLink(JSONObject json) throws ValidationException {
+    String field = "link";
+    try {
+      String fieldVal = json.getString(field);
+      validateResetLink(fieldVal, field);
+    } catch (JSONException e) {
+      log.info("Validation not passed: Missing '" + field + "'");
       throw new ValidationException("missing " + field + "field");
+    }
+  }
+
+
+  /**
+   * Checks wether a json object conforms to the requirements for the resetPassword/createlink
+   * endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
+  public static void validatePasswordResetCreatelink(JSONObject json) throws ValidationException {
+    String field = "email";
+    try {
+      String fieldVal = json.getString(field);
+      validateEmail(fieldVal, field);
+    } catch (JSONException e) {
+      log.info("Validation not passed: Missing '" + field + "'");
+      throw new ValidationException("missing " + field + "field");
+    }
+  }
+
+
+  /**
+   * Checks wether a json object conforms to the requirements for the resetPassword endpoint
+   *
+   * @param json the Json object
+   * @throws ValidationException if the requirements are not met
+   */
+  public static void validatePasswordReset(JSONObject json) throws ValidationException {
+    String[] expectedFields = {"link", "password"};
+    String field = "";
+    try {
+      for (String f : expectedFields) {
+        field = f;
+        String fieldVal = json.getString(field);
+
+        if (field.equals("link")) {
+          validateResetLink(fieldVal, field);
+        } else if (field.equals("password")) {
+          validateString(fieldVal, field);
+        }
+      }
+    } catch (JSONException e) {
+      log.info("Validation not passed: Missing '" + field + "'");
+      throw new ValidationException("missing " + field + "field");
+    }
+  }
+
+  /**
+   * Validation fo the dummy endpoint. Checks that json contains the correct fields and that
+   * password is a valid format
+   *
+   * @param json
+   * @throws ValidationException
+   */
+  public static void validateUpdate(JSONObject json) throws ValidationException {
+    String field = "";
+    try {
+      field = "token";
+      validateToken(json.getString(field));
+      field = "password";
+      validateString(json.getString(field), field);
+    } catch (JSONException e) {
+      log.info("missing field: " + field);
+      throw new ValidationException("missing field: " + field);
+    }
+  }
+
+  private static void validateString(String string, String fieldName)
+      throws ValidationException {
+    if (string == null || string.isEmpty()) {
+      log.info("Validation not passed: Invalid '" + fieldName + "' format");
+      throw new ValidationException("Invalid '" + fieldName + "' format");
+    }
+  }
+
+  private static void validateResetLink(String resetLink, String fieldName)
+      throws ValidationException {
+    try {
+      com.grupp1.utils.Validation.validateResetLink(resetLink);
+    } catch (IllegalArgumentException e) {
+      log.info("Validation not passed: Invalid '" + fieldName + "' format");
+      throw new ValidationException("Invalid '" + fieldName + "' format");
+    }
+  }
+
+  private static void validateEmail(String username, String fieldName) throws ValidationException {
+    try {
+      com.grupp1.utils.Validation.validateEmail(username);
+    } catch (IllegalArgumentException e) {
+      log.info("Validation not passed: Invalid '" + fieldName + "' format");
+      throw new ValidationException("Invalid '" + fieldName + "' format");
+    }
+  }
+
+  private static void validateUsername(String username, String fieldName)
+      throws ValidationException {
+    try {
+      com.grupp1.utils.Validation.validateUsername(username);
+    } catch (IllegalArgumentException e) {
+      log.info("Validation not passed: Invalid '" + fieldName + "' format");
+      throw new ValidationException("Invalid '" + fieldName + "' format");
+    }
+  }
+
+  private static void validatePersonalNumber(String personalNumber, String fieldName)
+      throws ValidationException {
+    try {
+      com.grupp1.utils.Validation.validatePersonalNumber(personalNumber);
+    } catch (IllegalArgumentException e) {
+      log.info("Validation not passed: Invalid '" + fieldName + "' format");
+      throw new ValidationException("Invalid '" + fieldName + "' format");
     }
   }
 }
