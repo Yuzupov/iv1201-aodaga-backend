@@ -32,20 +32,21 @@ class Validation {
         validateUsername(username, field);
         hasUsername = true;
       }
-      field = "userEmail";
+      field = "email";
       if (json.has(field)) {
         email = json.getString(field);
         validateEmail(email, field);
-        hasUsername = true;
+        hasEmail= true;
       }
       if (!hasUsername && !hasEmail) {
-        throw new ValidationException("missing 'username' or 'userEmail' field");
+        log.info("Validation not passed, missing 'username' or 'email' field");
+        throw new ValidationException("missing 'username' or 'email' field");
       }
       field = "userPassword";
       json.getString(field);
 
     } catch (JSONException e) {
-      e.printStackTrace();
+      log.info("Validation not passed, bad or missing '" + field + "' field");
       throw new ValidationException("bad or missing '" + field + "' field");
     }
   }
@@ -75,7 +76,6 @@ class Validation {
         if (fieldVal.length() > 255) {
           throw new ValidationException("'" + field + "' too long");
         }
-        //TODO
         if (field.equals("personalNumber")) {
           validatePersonalNumber(fieldVal, field);
         }
@@ -86,7 +86,7 @@ class Validation {
           validateUsername(fieldVal, field);
         }
       } catch (JSONException e) {
-        e.printStackTrace();
+        log.info("Validation not passed, missing '" + field + "' field");
         throw new ValidationException("missing '" + field + "' field");
       }
     }
@@ -320,6 +320,7 @@ class Validation {
 
   private static void validateEmail(String username, String fieldName) throws ValidationException {
     try {
+      System.out.println("lol");
       com.grupp1.utils.Validation.validateEmail(username);
     } catch (IllegalArgumentException e) {
       log.info("Validation not passed: Invalid '" + fieldName + "' format");
