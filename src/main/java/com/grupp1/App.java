@@ -11,6 +11,12 @@ import org.slf4j.LoggerFactory;
  */
 public class App {
 
+  /**
+   * This is the programs main entry point If the system has a PORT enironment variable, it will
+   * decide the api port.
+   *
+   * @param args no arguments
+   */
   public static void main(String[] args) {
 
     String port = System.getenv("PORT");

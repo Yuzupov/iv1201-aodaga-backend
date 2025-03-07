@@ -50,6 +50,15 @@ public class Controller {
     }
   }
 
+  /**
+   * Reset a users password. Requires a valid reset link and new password.
+   *
+   * @param resetLink the valid reset link
+   * @param password  the new password
+   * @throws BadApiInputException
+   * @throws ServerException
+   * @throws NoSuchUserException
+   */
   public static void resetPasswordWithLink(String resetLink, String password)
       throws BadApiInputException, ServerException, NoSuchUserException {
     String passwordHash = PasswordHash.hashPassword(password);
@@ -62,8 +71,17 @@ public class Controller {
 
   }
 
+  /**
+   * Validates a password reset link. If it is valid nothing will be returned If it is invalid an
+   * exception will be thrown
+   *
+   * @param resetLink the link to validate
+   * @throws NoSuchUserException
+   * @throws ServerException
+   * @throws BadApiInputException
+   */
   public static void validatePasswordResetLink(String resetLink)
-      throws NoSuchUserException, ServerException, BadApiInputException {
+      throws ServerException, BadApiInputException, NoSuchUserException {
     long timestamp;
     try {
       timestamp = DB.getPasswordResetLinkExpiratonTime(resetLink);
@@ -174,10 +192,10 @@ public class Controller {
   }
 
   /**
-   * Dummy endpoint method
+   * Dummy endpoint method for now only validates the provided credentials
    *
-   * @param username
-   * @param password
+   * @param username user with editing permissions
+   * @param password users password
    * @throws PasswordException
    * @throws NoSuchUserException
    * @throws ServerException

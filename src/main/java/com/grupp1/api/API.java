@@ -24,10 +24,18 @@ public class API {
 
   static final Logger log = LoggerFactory.getLogger(API.class);
 
+  /**
+   * Spin up the api, this launches the api on port 4567
+   */
   public API() {
     this(4567);
   }
 
+  /**
+   * Spin up the api, this launches the api on the supplied port
+   *
+   * @param port the port number for the api to attach to
+   */
   public API(int port) {
     if (port != 4567) {
       Spark.port(port);
@@ -202,7 +210,6 @@ public class API {
     }
   }
 
-  //{String link, String newPassword}
   private String passwordReset(Request req, Response res) {
     logRequest(req);
     try {
@@ -227,18 +234,12 @@ public class API {
     } catch (BadCryptException e) {
       res.status(400);
       return "Crypt error:\n" + e.getMessage() + "\r\n\r\n"; //TODO crypt error string change
-    /*} catch (IllegalRoleException e) {
-      res.status(403);
-      return "Forbidden:\n" + e.getMessage() + "\r\n\r\n";
-
-     */
     } catch (ServerException e) {
       res.status(500);
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";
     }
   }
 
-  //{String username, String email}
   private String passwordResetCreateLink(Request req, Response res) {
     logRequest(req);
     try {
@@ -269,7 +270,6 @@ public class API {
     }
   }
 
-  //{String link}
   private String passwordResetValidatelink(Request req, Response res) {
     logRequest(req);
     try {
@@ -288,12 +288,9 @@ public class API {
           json.getString("timestamp")).toString();
 
       // TODO Must fix catches
-    } catch (APIException | NoSuchUserException e) { //| NoSuchUserException e) {
+    } catch (APIException | NoSuchUserException e) {
       res.status(400);
       return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
-    /*} catch (IllegalRoleException e) {
-      res.status(403);
-      return "Forbidden:\n" + e.getMessage() + "\r\n\r\n";*/
     } catch (ServerException e) {
       res.status(500);
       return "Internal server error:\n" + e.getMessage() + "\r\n\r\n";

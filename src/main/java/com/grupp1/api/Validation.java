@@ -36,7 +36,7 @@ class Validation {
       if (json.has(field)) {
         email = json.getString(field);
         validateEmail(email, field);
-        hasEmail= true;
+        hasEmail = true;
       }
       if (!hasUsername && !hasEmail) {
         log.info("Validation not passed, missing 'username' or 'email' field");
@@ -102,7 +102,7 @@ class Validation {
     try {
       json.getString("token");
     } catch (JSONException e) {
-      e.printStackTrace();
+      log.info("Validation not passed, missing 'token' field");
       throw new ValidationException("missing 'token' field");
     }
   }

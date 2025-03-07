@@ -175,6 +175,12 @@ public class DB {
 
   }
 
+  /**
+   * list all applicants
+   *
+   * @return list of applicantDTO objects
+   * @throws DBException
+   */
   public static List<ApplicantDTO> applicants() throws DBException {
     Validation.validateApplicants();
     String query_availability = "SELECT * FROM availability ORDER BY person_id";
@@ -230,6 +236,14 @@ public class DB {
     }
   }
 
+  /**
+   * Gets the expiration timestamp of the given reset link
+   *
+   * @param resetLink
+   * @return expiration date/time in unix epoch millisecond
+   * @throws DBException
+   * @throws NoSuchUserException
+   */
   public static long getPasswordResetLinkExpiratonTime(String resetLink)
       throws DBException, NoSuchUserException {
     Validation.validateGetPasswordResetlinkExpirationdate(resetLink);
@@ -268,6 +282,15 @@ public class DB {
     }
   }
 
+  /**
+   * create a new password reset link for a given user(by email) in database If one alreay exists
+   * for given user it is overwritten.
+   *
+   * @param email     the user email
+   * @param resetlink the reset link
+   * @param timestamp expiration time (unix epoch millisecond)
+   * @throws DBException
+   */
   public static void createPasswordResetLink(String email, String resetlink, Long timestamp)
       throws DBException {
     Validation.validateCreatePasswordResetlink(email, resetlink, timestamp);
@@ -303,6 +326,13 @@ public class DB {
     }
   }
 
+  /**
+   * Set a users password using a reset link.
+   *
+   * @param resetLink
+   * @param passwordHash
+   * @throws DBException
+   */
   public static void setUserPasswordByResetLink(String resetLink, String passwordHash)
       throws DBException {
     log.debug("changing password Hash: " + passwordHash);

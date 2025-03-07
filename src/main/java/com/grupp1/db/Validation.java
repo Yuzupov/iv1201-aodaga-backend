@@ -49,7 +49,7 @@ public class Validation {
   /**
    * Validation for input to the applicants function in DB. throws error if validation fails
    */
-  public static void validateApplicants() {
+  static void validateApplicants() {
   }
 
   /**
@@ -58,7 +58,7 @@ public class Validation {
    *
    * @param resetLink
    */
-  public static void validateGetPasswordResetlinkExpirationdate(String resetLink) {
+  static void validateGetPasswordResetlinkExpirationdate(String resetLink) {
     validateResetLink(resetLink);
   }
 
@@ -70,7 +70,7 @@ public class Validation {
    * @param resetlink
    * @param timestamp
    */
-  public static void validateCreatePasswordResetlink(String email, String resetlink,
+  static void validateCreatePasswordResetlink(String email, String resetlink,
       Long timestamp) {
     validateEmail(email);
     validateResetLink(resetlink);
@@ -88,7 +88,7 @@ public class Validation {
    * @param resetLink
    * @param passwordHash
    */
-  public static void validateSetUserPasswordByResetlink(String resetLink, String passwordHash) {
+  static void validateSetUserPasswordByResetlink(String resetLink, String passwordHash) {
     validateResetLink(resetLink);
     validatePasswordHash(passwordHash);
   }

@@ -35,10 +35,11 @@ class Crypt {
   private static final String rsaPrivKey;
 
   static {
-    String key = System.getenv("RSA_PRIV_KEY");
+    String key = System.getenv("RSA_PRIV_KEY"); //present on heroku
     if (key != null && key.length() > 0) {
       rsaPrivKey = key;
     } else {
+      //ONLY USED FOR LOCAL TESTING
       rsaPrivKey =
           "-----BEGIN PRIVATE KEY-----\n"
               + "MIICeQIBADANBgkqhkiG9w0BAQEFAASCAmMwggJfAgEAAoGBALVtRzmA5aSxe1QR\n"
@@ -134,7 +135,7 @@ class Crypt {
    * @return
    * @throws BadCryptException
    */
-  public static String decryptRSA(String cipherText) throws BadCryptException {
+  static String decryptRSA(String cipherText) throws BadCryptException {
     try {
       String privateKeyPEM = rsaPrivKey
           .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -171,7 +172,7 @@ class Crypt {
    * @return Base64 encoded encrypted String
    */
 
-  public static String signRSA(String message) {
+  static String signRSA(String message) {
     try {
       String privateKeyPEM = rsaPrivKey
           .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -182,20 +183,14 @@ class Crypt {
       KeyFactory keyFactory = KeyFactory.getInstance("RSA");
       PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
       RSAPrivateKey privateKey = (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
-      //---
+
       Signature privateSignature = Signature.getInstance("SHA256withRSA");
       privateSignature.initSign(privateKey);
       privateSignature.update(message.getBytes(StandardCharsets.UTF_8));
 
       byte[] signature = privateSignature.sign();
       return Base64.getEncoder().encodeToString(signature);
-/*
-      Cipher cipher = Cipher.getInstance("RSA");
-      cipher.init(Cipher, privateKey);
 
-      byte[] encrypted = cipher.doFinal(message.getBytes(StandardCharsets.UTF_8));
-      return Base64.getEncoder().encodeToString(encrypted);
-*/
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException(e);
     } catch (SignatureException e) {
@@ -212,7 +207,7 @@ class Crypt {
    * @param message
    * @return Base64 encoded encrypted String
    */
-  public static String encryptRsaPubKey(byte[] message) {
+  static String encryptRsaPubKey(byte[] message) {
     try {
       String privateKeyPEM = rsaPrivKey
           .replace("-----BEGIN PRIVATE KEY-----", "")
