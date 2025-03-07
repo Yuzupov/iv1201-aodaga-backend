@@ -88,7 +88,7 @@ public class API {
       if (json.has("username")) {
         username = json.getString("username");
       }
-      if (json.has("userEmail")) {
+      if (json.has("email")) {
         email = json.getString("email");
       }
 
@@ -98,7 +98,7 @@ public class API {
       JSONObject responseJson = new JSONObject();
       responseJson.put("token", tokenObj.token());
       responseJson.put("username", user.username());
-      responseJson.put("userEmail", user.email());
+      responseJson.put("email", user.email());
       responseJson.put("role", user.role());
       responseJson.put("expirationDate", tokenObj.expirationDate());
 
