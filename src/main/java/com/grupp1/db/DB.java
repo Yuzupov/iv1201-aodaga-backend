@@ -305,7 +305,7 @@ public class DB {
 
   public static void setUserPasswordByResetLink(String resetLink, String passwordHash)
       throws DBException {
-    log.debug("changhing password Hash: " + passwordHash);
+    log.debug("changing password Hash: " + passwordHash);
     Validation.validateSetUserPasswordByResetlink(resetLink, passwordHash);
     String query = "UPDATE person SET password = ? WHERE person_id = (SELECT person_id FROM reset_link WHERE reset_link = ?)";
     String deleteQuery = "DELETE FROM reset_link WHERE reset_link = ?";

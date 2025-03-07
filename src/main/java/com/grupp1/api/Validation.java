@@ -191,9 +191,11 @@ class Validation {
     try {
       byte[] tokenBytes = Base64.getDecoder().decode(token);
       String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
+      System.out.println(jsonString);
       json = new JSONObject(jsonString);
     } catch (JSONException | IllegalArgumentException e) {
       log.info("Not a valid token");
+      log.debug("Debug exception log", e);
       throw new ValidationException("Token not valid" + e);
     }
 
@@ -289,7 +291,7 @@ class Validation {
     String field = "";
     try {
       field = "token";
-      validateToken(json.getString(field));
+      json.getString(field);
       field = "password";
       validateString(json.getString(field), field);
     } catch (JSONException e) {
