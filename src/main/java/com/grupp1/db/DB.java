@@ -137,7 +137,7 @@ public class DB {
         log.info("no user created, username ('" + username + "'), personal number ('" + pnr
             + "') or email ('" + email
             + "') already exists");
-        throw new UserExistsException("username or email already exists");
+        throw new UserExistsException("user already exists");
       }
       Statement lol = conn.createStatement();
       ResultSet rs = lol.executeQuery("SELECT role_id FROM role WHERE name = 'applicant'");
