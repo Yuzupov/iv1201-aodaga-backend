@@ -35,7 +35,7 @@ CREATE TABLE public.reset_link (
 	reset_link_id integer NOT null,
 	person_id integer NOT null,
 	reset_link character varying(255),
-	expiration_time timestamp
+	valid_to timestamp
 
 );
 
@@ -5843,4 +5843,7 @@ ALTER TABLE ONLY public.application
 ALTER TABLE ONLY public.reset_link
     ADD CONSTRAINT reset_link_person_id_fkey FOREIGN KEY (person_id) REFERENCES public.person(person_id);
 
+INSERT INTO public.person (name, surname, pnr, email, password, role_id, username) VALUES ('admin', 'admin', '00000000-0000', 'admin@aodaga.se', '$0oH2OGV7BR3VZzGufYk8YQ==$CV57pMd3apxPc8fPHs1oPXNOPUrOCXM/IQazGd9gieE=', '1', 'admin');
+
 GRANT SELECT, UPDATE, INSERT, DELETE ON ALL TABLES IN SCHEMA public to aodaga;
+
