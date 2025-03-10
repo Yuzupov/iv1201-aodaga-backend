@@ -258,7 +258,7 @@ public class API {
           json.getString("timestamp")).toString();
 
       // TODO Must fix catches
-    } catch (ValidationException e) { //| NoSuchUserException e) {
+    } catch (ValidationException | NoSuchUserException e) { //| NoSuchUserException e) {
       res.status(400);
       return "Bad Input:\n" + e.getMessage() + "\r\n\r\n";
     } catch (BadCryptException e) {

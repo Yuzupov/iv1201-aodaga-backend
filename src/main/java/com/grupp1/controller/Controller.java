@@ -104,7 +104,8 @@ public class Controller {
    * @throws ServerException
    */
 
-  public static void createPasswordResetLink(String email) throws ServerException {
+  public static void createPasswordResetLink(String email)
+      throws ServerException, NoSuchUserException {
     byte[] rndBytes = new byte[32];
     try {
       SecureRandom.getInstanceStrong().nextBytes(rndBytes);
@@ -120,6 +121,7 @@ public class Controller {
     Long timestamp = Instant.now().plusSeconds(600).getEpochSecond() * 1000;
 
     try {
+      DB.getUserByUsernameOrEmail("", email);
       DB.createPasswordResetLink(email, resetlink, timestamp);
 
       System.out.println("This is an email");

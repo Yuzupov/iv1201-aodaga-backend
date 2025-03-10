@@ -247,7 +247,7 @@ public class DB {
   public static long getPasswordResetLinkExpiratonTime(String resetLink)
       throws DBException, NoSuchUserException {
     Validation.validateGetPasswordResetlinkExpirationdate(resetLink);
-    String query = "SELECT expiration_time FROM reset_link WHERE reset_link = ?";
+    String query = "SELECT valid_to FROM reset_link WHERE reset_link = ?";
 
     Connection conn = getConn();
     try {
@@ -262,7 +262,7 @@ public class DB {
         throw new NoSuchUserException("No such reset link");
       }
 
-      Timestamp time = res.getTimestamp("expiration_time");
+      Timestamp time = res.getTimestamp("valid_to");
 
       conn.commit();
       conn.close();
@@ -292,18 +292,18 @@ public class DB {
    * @throws DBException
    */
   public static void createPasswordResetLink(String email, String resetlink, Long timestamp)
-      throws DBException {
+      throws DBException, NoSuchUserException {
     Validation.validateCreatePasswordResetlink(email, resetlink, timestamp);
     String deleteQuery = "DELETE FROM reset_link WHERE person_id = (SELECT person_id FROM person WHERE email = ?)";
     String query =
-        "INSERT INTO reset_link (person_id, reset_link, expiration_time) VALUES ((SELECT person_id FROM person WHERE email = ?), ?, ?)";
+        "INSERT INTO reset_link (person_id, reset_link, valid_to) VALUES ((SELECT person_id FROM person WHERE email = ?), ?, ?)";
 
     Connection conn = getConn();
     try {
       conn.setAutoCommit(false);
       PreparedStatement delStmt = conn.prepareStatement(deleteQuery);
       delStmt.setString(1, email);
-      boolean b = delStmt.execute();
+      delStmt.execute();
 
       PreparedStatement stmt = conn.prepareStatement(query);
       stmt.setString(1, email);
