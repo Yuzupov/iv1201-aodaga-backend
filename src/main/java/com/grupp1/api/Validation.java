@@ -191,7 +191,7 @@ class Validation {
     try {
       byte[] tokenBytes = Base64.getDecoder().decode(token);
       String jsonString = new String(tokenBytes, StandardCharsets.UTF_8);
-      System.out.println(jsonString);
+      log.debug("Token contents: " + jsonString);
       json = new JSONObject(jsonString);
     } catch (JSONException | IllegalArgumentException e) {
       log.info("Not a valid token");
@@ -320,7 +320,6 @@ class Validation {
 
   private static void validateEmail(String username, String fieldName) throws ValidationException {
     try {
-      System.out.println("lol");
       com.grupp1.utils.Validation.validateEmail(username);
     } catch (IllegalArgumentException e) {
       log.info("Validation not passed: Invalid '" + fieldName + "' format");
